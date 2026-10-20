@@ -287,6 +287,54 @@
   .panel.section-image .panel-title::before { content: "🖼️ "; }
   .panel.section-prompt .panel-title::before { content: "✨ "; }
 
+  /* Step wizard */
+  .steps { display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
+  .step {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px 16px;
+    position: relative;
+  }
+  .step[data-step="1"] { border-left: 3px solid var(--writer); }
+  .step[data-step="2"] { border-left: 3px solid var(--accent); }
+  .step[data-step="3"] { border-left: 3px solid var(--success); }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--panel); border: 2px solid var(--border-strong);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; flex-shrink: 0;
+  }
+  .step[data-step="1"] .step-num { border-color: var(--writer); color: var(--writer); }
+  .step[data-step="2"] .step-num { border-color: var(--accent); color: var(--accent); }
+  .step[data-step="3"] .step-num { border-color: var(--success); color: var(--success); }
+  .step-body { flex: 1; min-width: 0; }
+  .step-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .step-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .step-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+  .step-status { font-size: 12px; color: var(--text-muted); }
+  .step-status.ok { color: var(--success); font-weight: 600; }
+  .step-status.err { color: var(--danger); font-weight: 600; }
+  .step-status.busy { color: var(--warning); font-weight: 600; }
+
+  /* Settings modal extras */
+  .settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .settings-help {
+    font-size: 12px; color: var(--text-faint); line-height: 1.5;
+    background: var(--panel-2); border-left: 3px solid var(--accent);
+    padding: 10px 12px; border-radius: var(--radius-sm); margin: 10px 0;
+  }
+  .settings-help code {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 1px 5px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px;
+  }
+  .api-key-status {
+    font-size: 12px; padding: 6px 10px; border-radius: 4px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    margin-top: 10px;
+  }
+  .api-key-status.ok { color: var(--success); border-color: rgba(22,163,74,0.3); background: rgba(22,163,74,0.08); }
+  .api-key-status.missing { color: var(--text-muted); }
+
   @media (max-width: 900px) {
     .content-wrap { flex-direction: column; }
     .sidebar { display: none; }
@@ -422,33 +470,58 @@
             </div>
           </div>
 
-          <!-- PROMPT + PARSE -->
+          <!-- PROMPT + PARSE — 3-step wizard -->
           <div class="panel section-prompt">
             <div class="panel-header">
               <div>
-                <h1 class="panel-title">Generate & Parse</h1>
-                <p class="panel-subtitle">Copy one comprehensive prompt → get the full article + meta + image in one shot.</p>
+                <h1 class="panel-title">Generate the article</h1>
+                <p class="panel-subtitle">Three steps: get the prompt → run it → paste the response back. Or click Generate with AI to run it here.</p>
               </div>
               <div class="panel-actions">
-                <button class="btn writer" id="btn-copy-prompt">📋 Copy full prompt</button>
-                <button class="btn" id="btn-toggle-paste">📥 Paste response</button>
+                <button class="btn" id="btn-settings" title="API settings for Generate with AI">⚙ Settings</button>
+              </div>
+            </div>
+
+            <div class="steps">
+              <div class="step" data-step="1">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                  <div class="step-title">Get the prompt</div>
+                  <div class="step-desc">Copy the comprehensive prompt below, OR click <strong>Generate with AI</strong> to run it directly here (set API key in Settings first).</div>
+                  <div class="step-actions">
+                    <button class="btn writer" id="btn-copy-prompt">📋 Copy full prompt</button>
+                    <button class="btn primary" id="btn-generate-ai">✨ Generate with AI</button>
+                    <span id="ai-status" class="step-status"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="step" data-step="2">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                  <div class="step-title">Paste the response</div>
+                  <div class="step-desc">Run the prompt in your AI (or wait for the AI button above). Paste the full response here.</div>
+                  <textarea class="textarea mono" id="ai-response" placeholder="Paste the AI response here…" style="min-height:220px; margin-top:8px;"></textarea>
+                </div>
+              </div>
+
+              <div class="step" data-step="3">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                  <div class="step-title">Fill the fields</div>
+                  <div class="step-desc">Parses the response and distributes everything into the article, meta, image and advanced fields below.</div>
+                  <div class="step-actions" style="margin-top:8px;">
+                    <button class="btn writer" id="btn-parse">⤵ Parse & fill fields</button>
+                    <button class="btn ghost small" id="btn-clear-paste">Clear</button>
+                    <span id="parse-result" class="step-status"></span>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div class="help writer">
-              <strong>Format your AI uses:</strong> sections delimited by <code>=== SECTION ===</code>
-              (ARTICLE, META TITLES, META DESCRIPTIONS, SLUG, IMAGE PROMPT, IMAGE ALT, IMAGE FILENAME, plus optional RESEARCH, GEO, OUTLINE, FACT CHECK, AUDITS).
-              Anything you don't request can be left blank.
-            </div>
-
-            <div id="paste-area" class="hidden" style="margin-top:14px;">
-              <label class="label">AI response</label>
-              <textarea class="textarea mono" id="ai-response" placeholder="Paste the AI response here…" style="min-height:220px;"></textarea>
-              <div class="btn-row">
-                <button class="btn writer" id="btn-parse">⤵ Parse & fill fields</button>
-                <button class="btn ghost small" id="btn-clear-paste">Clear</button>
-                <span id="parse-result" style="font-size:12px; color:var(--text-muted); align-self:center;"></span>
-              </div>
+              <strong>Response format your AI uses:</strong> sections delimited by <code>=== SECTION ===</code>
+              (ARTICLE, META TITLES, META DESCRIPTIONS, SLUG, IMAGE PROMPT, IMAGE ALT, IMAGE FILENAME, plus RESEARCH, GEO, OUTLINE, FACT CHECK, AUDITS).
             </div>
           </div>
 
@@ -834,6 +907,51 @@
   </div>
 </div>
 
+<!-- Settings modal -->
+<div class="modal-backdrop" id="settings-modal">
+  <div class="modal" style="width:min(560px, 92vw);">
+    <h2>⚙ AI Settings</h2>
+    <p style="margin-bottom:14px;">Set up an API key to use <strong>Generate with AI</strong> directly in the tool. Your key is stored only in this browser's localStorage and is sent directly to the provider — never through any intermediate server.</p>
+
+    <div class="settings-help">
+      <strong>Supported providers:</strong><br>
+      • <strong>OpenAI:</strong> <code>gpt-4o-mini</code>, <code>gpt-4o</code>, <code>gpt-4-turbo</code>, <code>o1-mini</code><br>
+      • <strong>Anthropic:</strong> <code>claude-3-5-sonnet-latest</code>, <code>claude-3-5-haiku-latest</code>
+    </div>
+
+    <div class="form-grid cols-1" style="gap:12px;">
+      <div class="field">
+        <label class="label">Provider</label>
+        <select class="select" id="set-provider">
+          <option value="openai">OpenAI (api.openai.com)</option>
+          <option value="anthropic">Anthropic (api.anthropic.com)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="label">Model</label>
+        <input class="input mono" id="set-model" placeholder="gpt-4o-mini" />
+      </div>
+      <div class="field">
+        <label class="label">API Key</label>
+        <input class="input mono" id="set-apikey" type="password" placeholder="sk-... or sk-ant-..." />
+      </div>
+    </div>
+
+    <div class="api-key-status" id="api-key-status">No key saved yet.</div>
+
+    <div class="settings-help" style="margin-top:14px;">
+      <strong>Without an API key:</strong> the tool still works fully. Click <strong>Copy full prompt</strong>, paste it into ChatGPT / Claude / your AI of choice, paste the response back, then <strong>Parse & fill fields</strong>.
+    </div>
+
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn ghost" id="btn-clear-key">Clear key</button>
+      <span style="flex:1;"></span>
+      <button class="btn" id="btn-settings-cancel">Cancel</button>
+      <button class="btn writer" id="btn-settings-save">Save settings</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast">Copied</div>
 
@@ -846,6 +964,7 @@ const STORAGE_KEY = 'seo-geo-tool-v2';
 const state = {
   mode: 'writer',
   view: 'intake', // intake | working
+  aiResponseDraft: '',
   intake: { topic: '', language: '', market: '', audience: '', brand: '', wordcount: 1800, contenttype: 'How-to guide', notes: '' },
   working: {
     article: '', assumptions: '',
@@ -861,7 +980,8 @@ const state = {
     fixes: [],
     currentStage: 'cinput'
   },
-  theme: 'light'
+  theme: 'light',
+  settings: { provider: 'openai', apiKey: '', model: 'gpt-4o-mini' }
 };
 
 /* ============================================================
@@ -877,7 +997,9 @@ function load() {
     const data = JSON.parse(raw);
     if (data.mode) state.mode = data.mode;
     if (data.view) state.view = data.view;
+    if (data.aiResponseDraft) state.aiResponseDraft = data.aiResponseDraft;
     if (data.theme) state.theme = data.theme;
+    if (data.settings) Object.assign(state.settings, data.settings);
     if (data.intake) Object.assign(state.intake, data.intake);
     if (data.working) Object.assign(state.working, data.working);
     if (data.checker) {
@@ -1041,6 +1163,14 @@ function hydrateWorking() {
 }
 
 function bindWorking() {
+  // Persist AI response draft across reloads
+  const aiResEl = $('ai-response');
+  aiResEl.value = state.aiResponseDraft || '';
+  aiResEl.addEventListener('input', () => {
+    state.aiResponseDraft = aiResEl.value;
+    save();
+  });
+
   workingFields.forEach(f => {
     const el = $(f);
     if (!el) return;
@@ -1053,13 +1183,10 @@ function bindWorking() {
     });
   });
 
-  // Paste area toggle
-  $('btn-toggle-paste').addEventListener('click', () => {
-    $('paste-area').classList.toggle('hidden');
-  });
+  // Clear paste
   $('btn-clear-paste').addEventListener('click', () => {
     $('ai-response').value = '';
-    $('parse-result').textContent = '';
+    setStatus('parse-result', '', '');
     save();
   });
 
@@ -1069,7 +1196,15 @@ function bindWorking() {
   // Copy prompt
   $('btn-copy-prompt').addEventListener('click', () => {
     copyText(buildMegaPrompt());
+    setStatus('ai-status', 'Copied', 'ok');
+    setTimeout(() => setStatus('ai-status', '', ''), 2000);
   });
+
+  // Generate with AI
+  $('btn-generate-ai').addEventListener('click', generateWithAI);
+
+  // Settings
+  $('btn-settings').addEventListener('click', openSettings);
 
   // Bundle actions
   $('btn-bundle-copy').addEventListener('click', () => copyText($('bundle').value));
@@ -1104,6 +1239,147 @@ function updateMetaCounts() {
   });
 }
 
+function setStatus(id, text, cls) {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'step-status' + (cls ? ' ' + cls : '');
+}
+
+/* ============================================================
+   SETTINGS (BYOK)
+   ============================================================ */
+function openSettings() {
+  $('set-provider').value = state.settings.provider;
+  $('set-model').value = state.settings.model || '';
+  $('set-apikey').value = state.settings.apiKey || '';
+  updateKeyStatus();
+  $('settings-modal').classList.add('open');
+}
+function closeSettings() { $('settings-modal').classList.remove('open'); }
+function updateKeyStatus() {
+  const has = !!state.settings.apiKey;
+  $('api-key-status').textContent = has
+    ? `✓ Key saved · ${state.settings.provider} · ${state.settings.model}`
+    : 'No key saved yet.';
+  $('api-key-status').className = 'api-key-status ' + (has ? 'ok' : 'missing');
+}
+function bindSettings() {
+  $('btn-settings-cancel').addEventListener('click', closeSettings);
+  $('btn-settings-save').addEventListener('click', () => {
+    state.settings.provider = $('set-provider').value;
+    state.settings.model = $('set-model').value.trim() || ($('set-provider').value === 'anthropic' ? 'claude-3-5-sonnet-latest' : 'gpt-4o-mini');
+    state.settings.apiKey = $('set-apikey').value.trim();
+    save();
+    updateKeyStatus();
+    closeSettings();
+    toast(state.settings.apiKey ? 'Settings saved' : 'Settings saved (no key — use copy prompt)');
+  });
+  $('btn-clear-key').addEventListener('click', () => {
+    state.settings.apiKey = '';
+    $('set-apikey').value = '';
+    save();
+    updateKeyStatus();
+    toast('API key cleared');
+  });
+  $('set-provider').addEventListener('change', () => {
+    // Suggest a sensible default model when provider changes
+    const def = $('set-provider').value === 'anthropic' ? 'claude-3-5-sonnet-latest' : 'gpt-4o-mini';
+    if (!$('set-model').value || $('set-model').value.startsWith('gpt-') || $('set-model').value.startsWith('claude-')) {
+      $('set-model').value = def;
+    }
+  });
+  $('settings-modal').addEventListener('click', e => {
+    if (e.target.id === 'settings-modal') closeSettings();
+  });
+}
+
+/* ============================================================
+   GENERATE WITH AI (BYOK)
+   ============================================================ */
+async function generateWithAI() {
+  if (!state.settings.apiKey) {
+    setStatus('ai-status', 'No API key — opening settings', 'err');
+    openSettings();
+    return;
+  }
+  if (!state.intake.topic.trim() || !state.intake.language || !state.intake.market.trim()) {
+    setStatus('ai-status', 'Fill intake first', 'err');
+    openModal('Fill intake first', 'Topic, language and market are required.',
+      [{ label: 'OK', cls: 'primary', onClick: () => {} }]);
+    return;
+  }
+
+  const btn = $('btn-generate-ai');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+  setStatus('ai-status', `Calling ${state.settings.provider} ${state.settings.model}…`, 'busy');
+
+  try {
+    const prompt = buildMegaPrompt();
+    const text = await callAI(prompt);
+    $('ai-response').value = text;
+    setStatus('ai-status', '✓ Response received — parsing…', 'ok');
+    parseAIResponse();
+    setStatus('ai-status', '✓ Fields filled', 'ok');
+    toast('Generated and parsed');
+  } catch (err) {
+    setStatus('ai-status', `✗ ${err.message}`, 'err');
+    toast('AI error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Generate with AI';
+  }
+}
+
+async function callAI(prompt) {
+  const { provider, apiKey, model } = state.settings;
+  if (provider === 'anthropic') {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 8000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Anthropic ${res.status}: ${errText.slice(0, 200)}`);
+    }
+    const data = await res.json();
+    return (data.content || [])
+      .filter(b => b.type === 'text')
+      .map(b => b.text)
+      .join('\n\n');
+  }
+  // OpenAI default
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7
+    })
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`OpenAI ${res.status}: ${errText.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
 /* ============================================================
    TOPIC BAR
    ============================================================ */
@@ -1121,6 +1397,66 @@ function refreshTopicBar() {
 /* ============================================================
    MEGA PROMPT BUILDER
    ============================================================ */
+function getLanguageRules(lang) {
+  if (!lang) return { direction: 'LTR', rules: '' };
+  const l = lang.toLowerCase();
+  if (l.includes('hebrew') || l.includes('עברית')) {
+    return {
+      direction: 'RTL',
+      rules: `
+# ⚠️ HEBREW LANGUAGE RULES (strict)
+- Output the entire article body in Hebrew — pure Hebrew glyphs only.
+- Never mix Latin/English letters into Hebrew words. Watch for keyboard layout corruptions (typing Hebrew while English keyboard is active produces nonsense).
+- All H1 / H2 / H3 headings in Hebrew.
+- Use full RTL text direction throughout the article body.
+- Use proper Hebrew punctuation: period ".", question mark "?", exclamation mark "!". Hebrew geresh "׳" is optional.
+- Quotation marks: use ״...״ (gershayim) or standard ASCII "..." — pick one style and be consistent.
+- Numbers: Western Arabic numerals (1, 2, 3) are fine for dates, prices, percentages. Stay consistent.
+- Banned phrases in Hebrew: לצלול, הסיבה לכך פשוטה, "לסיכום", "במאמר זה נדעו", "בעידן המודרני".
+- Banned universal phrases: "in conclusion", "delve", "unlock", "game changer", "seamless".
+- No em dashes (—). Use " - " or restructure.
+- Meta title and description can be in Hebrew OR a Hebrew + English mix where natural for SEO. If mixed, keep the primary keyword in Hebrew.
+- URL slug stays in English / transliteration (hyphenated, ASCII only).
+- Fact check source URLs stay in their original form.
+- Verify each Hebrew word is a real Hebrew word, not a transliteration accident.`
+    };
+  }
+  if (l.includes('arabic')) {
+    return {
+      direction: 'RTL',
+      rules: `
+# ⚠️ ARABIC LANGUAGE RULES (strict)
+- Output the entire article body in Arabic — pure Arabic glyphs only.
+- Never mix foreign glyphs into Arabic words. Watch for keyboard layout corruptions.
+- All headings in Arabic.
+- Use full RTL text direction.
+- Pick one numeral system consistently: Western Arabic (1, 2, 3) OR Arabic-Indic (١, ٢, ٣). State your choice in the ASSUMPTIONS block.
+- Banned universal phrases: "in conclusion", "delve", "unlock", "game changer", "seamless".
+- No em dashes (—). Use " - " or restructure.`
+    };
+  }
+  if (l.includes('russian') || l.includes('кир') || l.includes('cyrillic')) {
+    return {
+      direction: 'LTR',
+      rules: `
+# ⚠️ RUSSIAN LANGUAGE RULES (strict)
+- Output the entire article body in Russian — Cyrillic characters only.
+- Never mix Latin glyphs into Russian words.
+- No em dashes (—). Use " - " or restructure.
+- Banned universal phrases: "delve", "unlock", "game changer", "seamless", "in conclusion".`
+    };
+  }
+  return {
+    direction: 'LTR',
+    rules: `
+# Language rules
+- Strict orthographic perfection. No typos, no keyboard slip.
+- No em dashes (—). Use " - " (hyphen with spaces) or restructure the sentence.
+- Banned phrases: delve, unlock, game changer, seamless, "in conclusion".
+- Native-sounding phrasing, not translated tone.`
+  };
+}
+
 function buildMegaPrompt() {
   const i = state.intake;
   const assumptions = [];
@@ -1128,11 +1464,13 @@ function buildMegaPrompt() {
   if (!i.brand) assumptions.push('No specific brand');
   if (!i.wordcount) assumptions.push('1,800 words');
 
+  const langRules = getLanguageRules(i.language);
+
   return `You are a senior SEO, GEO (Generative Engine Optimization) and content writer. Produce a publish-ready article plus every SEO/GEO deliverable in one response.
 
 # Project
 - Topic / primary keyword: ${i.topic}
-- Language: ${i.language}
+- Language: ${i.language} ${langRules.direction === 'RTL' ? '(RTL — right-to-left text direction)' : ''}
 - Country / market: ${i.market}
 - Target audience: ${i.audience || '[general consumer audience]'}
 - Brand: ${i.brand || '[none / generic]'}
@@ -1140,6 +1478,7 @@ function buildMegaPrompt() {
 - Content type: ${i.contenttype}
 ${i.notes ? `- Notes: ${i.notes}` : ''}
 ${assumptions.length ? `\nAssumptions to surface at the top of the article:\n${assumptions.map(a => '- ' + a).join('\n')}` : ''}
+${langRules.rules}
 
 # Workflow — execute in order
 
@@ -1163,10 +1502,9 @@ Vary heading depths, list lengths and paragraph styles. No rigid template.
 Full publish-ready markdown article. Rules:
 - Direct opening: answer the main query in the first 2–3 sentences. No filler.
 - Each H2 opens with a 1–2 sentence direct answer before expanding.
-- Expert, natural human tone. No em dashes (—).
-- Banned phrases: delve, unlock, game changer, seamless, "in conclusion", לצלול, הסיבה לכך פשוטה.
+- Expert, natural human tone.
 - Conditional / qualified statements where appropriate ("depending on the framework", "subject to specific regulatory guidelines").
-- Strict language purity for the target language. No accidental foreign glyphs or typos.
+- Strict language purity. No accidental foreign glyphs or typos.
 
 ## 5. Meta package
 - 3 meta title options (50–60 chars · primary keyword near start).
@@ -1293,7 +1631,7 @@ function parseAIResponse() {
   hydrateWorking();
   refreshBundle();
   save();
-  $('parse-result').textContent = `Filled ${filled} field${filled === 1 ? '' : 's'}.`;
+  setStatus('parse-result', `✓ Filled ${filled} field${filled === 1 ? '' : 's'}.`, 'ok');
   toast(`Parsed ${filled} field${filled === 1 ? '' : 's'}`);
 }
 
@@ -1707,6 +2045,7 @@ function hydrate() {
   bindIntake();
   hydrateWorking();
   bindWorking();
+  bindSettings();
   bindChecker();
   setWriterView(state.view || 'intake');
   showCheckerStage(state.checker.currentStage || 'cinput');

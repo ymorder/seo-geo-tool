@@ -4,24 +4,44 @@ A single-file browser tool that bundles an SEO/GEO **writer** workflow and a **c
 
 No build step, no backend, no dependencies. State persists in `localStorage`.
 
-## Writer mode — streamlined flow
+## Writer mode — 3-step wizard
 
 The writer was designed to start working the moment you enter the basics.
 
 1. **Intake** — three required fields: subject, language, market. Advanced inputs (audience, brand, length, content type, notes) are collapsed by default.
-2. **Start** → drops you into the working canvas.
-3. **Generate & Parse** at the top:
-   - **📋 Copy full prompt** generates a comprehensive prompt that asks the AI to do the research, writing, meta tags and image brief in one shot.
-   - **📥 Paste response** lets you paste the AI's reply back. **⤵ Parse & fill fields** distributes the response into the right fields automatically using `=== SECTION ===` delimiters.
-4. **Outputs sit on the canvas as editable panels**, in order of priority:
+2. **Click Start →** drops you into the working canvas.
+3. **Generate the article** — three numbered steps in one panel:
+   - **① Get the prompt** — `📋 Copy full prompt` (paste into any AI) **OR** `✨ Generate with AI` (runs the prompt directly here if you set an API key in Settings)
+   - **② Paste the response** — single textarea, drafts are saved automatically
+   - **③ Fill the fields** — `⤵ Parse & fill fields` distributes the response into the article, meta, image and advanced panels using `=== SECTION ===` delimiters
+4. **Outputs sit on the canvas as editable panels**, in priority order:
    - 📝 **Article** — full publish-ready body (markdown)
    - 🎯 **Meta Tags** — 3 title options · 3 description options · 1 URL slug · with character counters
    - 🖼️ **Featured Image** — style · mood · prompt · alt text · filename
-5. **▶ Advanced sections (optional)** — research · GEO prompts · outline · fact check · audits. Open only if you asked the AI for them.
+5. **▶ Advanced sections (optional)** — research · GEO prompts · outline · fact check · audits.
 6. **📦 Final Bundle** — auto-built markdown that stitches article + meta + image + audits. Copy or download `.md`.
 7. **Hand off to Checker →** — preloads the bundle as the text-to-check in Checker mode.
 
-The whole working view is a single scrollable canvas — no stage navigation, no manual paste-into-each-field.
+## Language support
+
+The mega prompt injects strict language-specific rules when you pick a language:
+
+- **Hebrew / Arabic** — RTL text direction, character purity rules, banned Hebrew/Arabic filler phrases (לצלול, הסיבה לכך פשוטה, לסיכום, בעידן המודרני, etc.), keyboard layout corruption warnings.
+- **Russian / Cyrillic** — pure Cyrillic body, no Latin mixing.
+- **English / Western** — strict orthography, em-dash ban, banned AI phrases.
+
+The prompt also explicitly tells the AI to write the meta title and description in the same language as the body (with URL slug staying English/transliterated for SEO).
+
+## Generate with AI (BYOK)
+
+You can run the AI step directly in the tool without copy-pasting anywhere. Click **⚙ Settings** in the Generate panel, paste your API key, pick a provider and model:
+
+- **OpenAI**: `gpt-4o-mini` (cheap, fast), `gpt-4o`, `gpt-4-turbo`, `o1-mini`
+- **Anthropic**: `claude-3-5-sonnet-latest`, `claude-3-5-haiku-latest`
+
+The key is stored only in your browser's localStorage and sent directly to the provider — never through any intermediate server. Click **✨ Generate with AI** and the tool calls the API, parses the response, and fills every field.
+
+If you don't want to use BYOK, the **Copy full prompt** workflow still works exactly as before.
 
 ## Checker mode
 
@@ -41,7 +61,7 @@ The Parse & fill button expects the AI response in this format:
 
 ```
 === ARTICLE ===
-[full markdown article]
+[full markdown article in the target language]
 
 === ASSUMPTIONS ===
 [bullet list]
@@ -57,7 +77,7 @@ The Parse & fill button expects the AI response in this format:
 3. [desc C — recommended]
 
 === SLUG ===
-[hyphenated-slug]
+[hyphenated-slug — ASCII / transliteration]
 
 === IMAGE STYLE ===
 [Realistic editorial photography | Modern abstract conceptual art | ...]
@@ -90,8 +110,7 @@ The comprehensive prompt the **Copy full prompt** button generates asks for this
 - 🗑 Reset with confirmation modal
 - Per-section copy buttons
 - Auto-save on every keystroke
-- RTL language support (Hebrew, Arabic) with character-set-aware counters
-- "Detect language" button in the checker (heuristic for Hebrew / Arabic / Cyrillic)
+- RTL UI handling for Hebrew / Arabic (working canvas is LTR but prompt respects RTL body)
 
 ## Running it
 
@@ -99,9 +118,10 @@ Open `index.html` in any modern browser. No server, no install.
 
 ## Tech notes
 
-- Single file, ~72 KB, no external requests.
+- Single file, ~80 KB, no external requests.
 - Vanilla JS, no framework, no build step.
 - Theme is `data-theme` on `<html>`; everything else is CSS variables.
+- BYOK uses `fetch()` directly to `api.openai.com` or `api.anthropic.com` from your browser.
 - State shape is in the `state` object near the top of the `<script>` block — easy to inspect or extend.
 
 ## License
