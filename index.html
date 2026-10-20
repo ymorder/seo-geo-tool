@@ -316,6 +316,29 @@
   .step-status.err { color: var(--danger); font-weight: 600; }
   .step-status.busy { color: var(--warning); font-weight: 600; }
 
+  /* Generation progress log */
+  .ai-log {
+    margin-top: 10px; max-height: 260px; overflow-y: auto;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--panel-2); padding: 8px 10px; display: none;
+  }
+  .ai-log:not(:empty) { display: block; }
+  .ai-log-row {
+    display: flex; gap: 8px; align-items: flex-start;
+    font-size: 12.5px; line-height: 1.5; padding: 3px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .ai-log-row:last-child { border-bottom: none; }
+  .ai-log-icon { flex: 0 0 auto; width: 16px; text-align: center; }
+  .ai-log-text { flex: 1; color: var(--text-muted); }
+  .ai-log-row.ok .ai-log-text { color: var(--text); }
+  .ai-log-row.ok .ai-log-icon { color: var(--success); }
+  .ai-log-row.err .ai-log-text { color: var(--danger); font-weight: 600; }
+  .ai-log-row.warn .ai-log-text { color: var(--warning); }
+  .ai-log-row.run .ai-log-text { color: var(--text); font-weight: 600; }
+  .ai-log-row.run .ai-log-icon { color: var(--warning); }
+  .ai-log-row.info .ai-log-text { color: var(--text-muted); font-style: italic; }
+
   /* Settings modal extras */
   .settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .settings-help {
@@ -475,7 +498,7 @@
             <div class="panel-header">
               <div>
                 <h1 class="panel-title">Generate the article</h1>
-                <p class="panel-subtitle">Three steps: get the prompt → run it → paste the response back. Or click Generate with AI to run it here.</p>
+                <p class="panel-subtitle">Let the tool run the whole job, or drive it yourself with the copy-paste prompt.</p>
               </div>
               <div class="panel-actions">
                 <button class="btn" id="btn-settings" title="API settings for Generate with AI">⚙ Settings</button>
@@ -486,21 +509,23 @@
               <div class="step" data-step="1">
                 <div class="step-num">1</div>
                 <div class="step-body">
-                  <div class="step-title">Get the prompt</div>
-                  <div class="step-desc">Copy the comprehensive prompt below, OR click <strong>Generate with AI</strong> to run it directly here. <strong style="color:var(--success);">Free out of the box</strong> via Pollinations.ai. Set an API key in ⚙ Settings for other providers.</div>
+                  <div class="step-title">Run the generation</div>
+                  <div class="step-desc">Click <strong>Generate with AI</strong> and the tool builds the deliverable in small verified steps (research, outline, article, meta, image), because free models cut off long replies. <strong style="color:var(--success);">Free out of the box</strong> via Pollinations.ai, or run it locally with Ollama. Fields fill in live as each step lands.</div>
                   <div class="step-actions">
-                    <button class="btn writer" id="btn-copy-prompt">📋 Copy full prompt</button>
+                    <button class="btn writer" id="btn-copy-prompt">📋 Copy full prompt (manual)</button>
                     <button class="btn primary" id="btn-generate-ai">✨ Generate with AI</button>
+                    <button class="btn" id="btn-fill-missing" style="display:none;">🔁 Fill missing steps</button>
                     <span id="ai-status" class="step-status"></span>
                   </div>
+                  <div class="ai-log" id="ai-log"></div>
                 </div>
               </div>
 
               <div class="step" data-step="2">
                 <div class="step-num">2</div>
                 <div class="step-body">
-                  <div class="step-title">Paste the response</div>
-                  <div class="step-desc">Run the prompt in your AI (or wait for the AI button above). Paste the full response here.</div>
+                  <div class="step-title">Paste a response</div>
+                  <div class="step-desc">No provider? Copy the full prompt, run it in ChatGPT / Claude / your AI of choice, and paste the response here.</div>
                   <textarea class="textarea mono" id="ai-response" placeholder="Paste the AI response here…" style="min-height:220px; margin-top:8px;"></textarea>
                 </div>
               </div>
@@ -919,7 +944,8 @@
       • <strong>🦙 Ollama (local)</strong> — <em>free, runs on your hardware.</em> Default <code>http://localhost:11434</code>. Models: <code>llama3.2</code>, <code>mistral</code>, <code>qwen2.5</code>, <code>phi3</code>, <code>gemma2</code>.<br>
       • <strong>OpenAI</strong> · <code>gpt-4o-mini</code>, <code>gpt-4o</code>, <code>gpt-4-turbo</code>, <code>o1-mini</code><br>
       • <strong>Anthropic</strong> · <code>claude-3-5-sonnet-latest</code>, <code>claude-3-5-haiku-latest</code><br>
-      • <strong>Google Gemini</strong> · <code>gemini-1.5-flash</code>, <code>gemini-1.5-pro</code>, <code>gemini-2.0-flash-exp</code>
+      • <strong>Google Gemini</strong> · <code>gemini-2.0-flash</code>, <code>gemini-1.5-flash</code> (free tier with a key, much higher output limit)<br>
+      • <strong>MiniMax</strong> · <code>MiniMax-M3.1-Flash</code>, <code>MiniMax-M3</code> via the Anthropic-compatible endpoint. Paste your own base URL to use a local MiniMax-compatible gateway instead.
     </div>
 
     <div class="form-grid cols-1" style="gap:12px;">
@@ -927,10 +953,11 @@
         <label class="label">Provider</label>
         <select class="select" id="set-provider">
           <option value="pollinations">🌱 Pollinations.ai (free, no key)</option>
-          <option value="ollama">🦙 Ollama (local, free)</option>
+          <option value="ollama">🦙 Ollama (local, free, no key)</option>
+          <option value="minimax">M MiniMax (API key, or local MiniMax-compatible URL)</option>
+          <option value="gemini">Google Gemini (free tier with key)</option>
           <option value="openai">OpenAI (BYOK)</option>
           <option value="anthropic">Anthropic (BYOK)</option>
-          <option value="gemini">Google Gemini (BYOK)</option>
         </select>
       </div>
       <div class="field">
@@ -938,7 +965,7 @@
         <input class="input mono" id="set-model" placeholder="openai-fast" />
       </div>
       <div class="field" id="set-baseurl-field" style="display:none;">
-        <label class="label">Ollama base URL <span class="hint">(include /v1 if your server expects it)</span></label>
+        <label class="label" id="set-baseurl-label">Ollama base URL <span class="hint">(include /v1 if your server expects it)</span></label>
         <input class="input mono" id="set-baseurl" placeholder="http://localhost:11434/v1" />
       </div>
       <div class="field" id="set-apikey-field">
@@ -1211,7 +1238,8 @@ function bindWorking() {
   });
 
   // Generate with AI
-  $('btn-generate-ai').addEventListener('click', generateWithAI);
+  $('btn-generate-ai').addEventListener('click', () => generateWithAI());
+  $('btn-fill-missing').addEventListener('click', () => generateWithAI({ resume: true }));
 
   // Settings
   $('btn-settings').addEventListener('click', openSettings);
@@ -1261,27 +1289,67 @@ function setStatus(id, text, cls) {
    ============================================================ */
 function defaultModelFor(provider) {
   if (provider === 'anthropic') return 'claude-3-5-sonnet-latest';
-  if (provider === 'gemini') return 'gemini-1.5-flash';
+  if (provider === 'gemini') return 'gemini-2.0-flash';
+  if (provider === 'minimax') return 'MiniMax-M3.1-Flash';
   if (provider === 'ollama') return 'llama3.2';
   if (provider === 'pollinations') return 'openai-fast';
   return 'gpt-4o-mini';
 }
+const KNOWN_PROVIDERS = ['pollinations', 'ollama', 'minimax', 'openai', 'anthropic', 'gemini'];
 function noKeyRequired(provider) {
   return provider === 'pollinations' || provider === 'ollama';
 }
 function needsBaseUrl(provider) {
-  return provider === 'ollama';
+  return provider === 'ollama' || provider === 'minimax';
 }
 function syncSettingsUI() {
   const p = $('set-provider').value;
   $('set-apikey-field').style.display = noKeyRequired(p) ? 'none' : '';
   $('set-baseurl-field').style.display = needsBaseUrl(p) ? '' : 'none';
+  $('set-baseurl-label').firstChild.textContent = p === 'minimax'
+    ? 'MiniMax base URL '
+    : 'Ollama base URL ';
+  $('set-baseurl').placeholder = p === 'minimax'
+    ? 'https://api.minimax.io/anthropic'
+    : 'http://localhost:11434/v1';
+}
+/* The prompt template's own filler text, e.g. "[title A]" or "[hyphenated-slug]".
+   Parsing the prompt as if it were a response used to store these as real output. */
+function isPlaceholderValue(v) {
+  const t = (v || '').trim();
+  if (!t) return false;
+  return /^\[[^\]]{2,140}\]$/.test(t) ||
+    /\[\s*your\b/i.test(t) ||
+    /\[(title|desc|desc\s*\w*|slug|alt text|mood|hyphenated)[^\]]*\]/i.test(t);
+}
+
+/* Repairs state saved by an older build so it cannot silently break generation. */
+function sanitizeState() {
+  const s = state.settings;
+  if (!KNOWN_PROVIDERS.includes(s.provider)) s.provider = 'pollinations';
+  if (!s.model || typeof s.model !== 'string') s.model = defaultModelFor(s.provider);
+  if (noKeyRequired(s.provider)) s.apiKey = '';
+  // A prompt left sitting in the response box parses as a successful run.
+  if (state.aiResponseDraft && looksLikeEcho(state.aiResponseDraft)) {
+    state.aiResponseDraft = '';
+    console.info('[seo-geo-tool] cleared a stale prompt from the response box');
+  }
+  // Fields filled from that prompt hold template filler, not content.
+  let cleared = 0;
+  for (const k of Object.keys(state.working)) {
+    if (isPlaceholderValue(state.working[k])) {
+      state.working[k] = k === 'image-style' ? 'Realistic editorial photography' : '';
+      cleared++;
+    }
+  }
+  if (cleared) console.info(`[seo-geo-tool] cleared ${cleared} placeholder field(s) from an earlier run`);
 }
 function openSettings() {
   $('set-provider').value = state.settings.provider;
   $('set-model').value = state.settings.model || defaultModelFor(state.settings.provider);
   $('set-apikey').value = state.settings.apiKey || '';
-  $('set-baseurl').value = state.settings.baseUrl || 'http://localhost:11434/v1';
+  $('set-baseurl').value = state.settings.baseUrl ||
+    (state.settings.provider === 'minimax' ? '' : 'http://localhost:11434/v1');
   syncSettingsUI();
   updateKeyStatus();
   $('settings-modal').classList.add('open');
@@ -1324,7 +1392,7 @@ function bindSettings() {
     syncSettingsUI();
     const def = defaultModelFor($('set-provider').value);
     const cur = $('set-model').value || '';
-    if (!cur || cur.startsWith('gpt-') || cur.startsWith('claude-') || cur.startsWith('gemini-') || cur.startsWith('llama') || cur.startsWith('mistral') || cur.startsWith('openai-fast') || cur.startsWith('openai-large')) {
+    if (!cur || /^(gpt-|o1|claude-|gemini-|llama|mistral|phi|qwen|gemma|MiniMax|openai-(fast|large))/.test(cur)) {
       $('set-model').value = def;
     }
   });
@@ -1336,9 +1404,327 @@ function bindSettings() {
 /* ============================================================
    GENERATE WITH AI (BYOK)
    ============================================================ */
-async function generateWithAI() {
-  if (!noKeyRequired(state.settings.provider) && !state.settings.apiKey) {
-    setStatus('ai-status', 'No API key — opening settings', 'err');
+/* ============================================================
+   STAGED GENERATION PIPELINE
+
+   A single mega-request cannot succeed on the free tier: the anonymous
+   Pollinations model returns finish_reason=length at roughly 4,600 output
+   characters, so the reply dies inside the research block and every
+   deliverable after it is missing. The job is therefore split into small
+   independent calls, and the article is assembled from several
+   continuation chunks.
+   ============================================================ */
+const CHUNK_WORDS = 420;       // requested per call; free models return less
+const MAX_CHUNKS = 10;
+const TAIL_CHARS = 700;        // article context sent with each continuation
+const MAX_ATTEMPTS = 3;
+
+/* ---------- prompt building blocks ---------- */
+function projectBrief() {
+  const i = state.intake;
+  const rows = [
+    `Topic / primary keyword: ${i.topic}`,
+    `Language: ${i.language}`,
+    `Country / market: ${i.market}`,
+    `Audience: ${i.audience || 'general consumer audience'}`,
+    `Brand: ${i.brand || 'none / generic'}`,
+    `Content type: ${i.contenttype}`,
+    `Word count target: ${i.wordcount || 1800}`
+  ];
+  if (i.notes) rows.push(`Extra constraints: ${i.notes}`);
+  return rows.join('\n');
+}
+
+/* Short, hard language rules repeated in every stage so nothing drifts. */
+function compactLangRules(lang) {
+  const l = (lang || '').toLowerCase();
+  let s = `Write everything in ${lang}, natively. Pure ${lang} script only, no foreign glyphs mixed into words.`;
+  if (l.includes('hebrew') || l.includes('עברית')) {
+    s += ' The article is RTL. Use real Hebrew words, check for keyboard-layout corruption. Numbers as 1,2,3.';
+  } else if (l.includes('arabic')) {
+    s += ' The article is RTL. Use real Arabic words, check for keyboard-layout corruption.';
+  } else if (l.includes('russian') || l.includes('кир')) {
+    s += ' Cyrillic characters only, never Latin inside Russian words.';
+  }
+  s += ' No em dashes, use a hyphen with spaces or restructure the sentence.';
+  s += ' Avoid: delve, unlock, game changer, seamless, "in conclusion".';
+  return s;
+}
+
+const NO_PREAMBLE = 'Return only the requested sections. No preamble, no closing remarks, no restating these instructions.';
+
+function promptResearch() {
+  const i = state.intake;
+  return `You are an SEO and GEO research specialist researching the ${i.market} market.
+
+${projectBrief()}
+
+${compactLangRules(i.language)}
+
+Produce exactly two sections using these exact delimiters:
+
+=== RESEARCH ===
+Pages currently ranking for the primary keyword in ${i.market} (name 5 with their angle), then a keyword map (primary, secondary, related entities, People Also Ask questions), then content gaps (missing subtopics, unverified data, missing risk factors). Be concrete and specific. 250 to 400 words total.
+
+=== GEO ===
+10 realistic user prompts across informational, how-to, best-of and comparison styles. Under each prompt write a 2 to 3 sentence direct answer written so AI search engines can quote it.
+
+${NO_PREAMBLE}`;
+}
+
+function promptOutline(research) {
+  return `You are an SEO editor planning an article.
+
+${projectBrief()}
+
+Research summary:
+${(research || '').slice(0, 3000)}
+
+Produce exactly one section:
+
+=== OUTLINE ===
+- H1 containing the primary keyword exactly.
+- A direct intro paragraph of 1 to 2 sentences, no heading.
+- 5 to 7 H2 sections with a one line purpose each, some with H3 subsections.
+- FAQ with 4 to 5 real questions.
+- Conclusion.
+
+${NO_PREAMBLE}`;
+}
+
+function promptArticleChunk(outline, articleSoFar, isFirst, chunkNo, totalChunks) {
+  const i = state.intake;
+  const words = CHUNK_WORDS;
+  if (isFirst) {
+    return `You are an SEO writer producing a publish-ready article.
+
+${projectBrief()}
+
+${compactLangRules(i.language)}
+
+Structure to follow:
+${(outline || 'H1 with the primary keyword, direct intro, 5 to 7 H2 sections, FAQ, conclusion').slice(0, 2500)}
+
+Write ONLY the opening of the article, in markdown, in ${i.language}:
+- Start immediately with the H1 line. No title of your own, no preamble.
+- Direct intro paragraph answering the main query in the first two sentences.
+- Then the first 2 outline sections.
+- Do NOT write the FAQ or the conclusion yet.
+
+About ${words} words. ${NO_PREAMBLE}`;
+  }
+  return `Continue the article below. Same language, same voice, same markdown.
+
+${projectBrief()}
+
+${compactLangRules(i.language)}
+
+Full outline for reference:
+${(outline || '').slice(0, 2500)}
+
+The article so far ends here:
+"""
+${(articleSoFar || '').slice(-TAIL_CHARS)}
+"""
+
+Rules for this continuation:
+- Do NOT repeat the H1, the intro, or any sentence already written.
+- Do NOT restart or add a heading for the part already written.
+- Continue from exactly where the text stops, writing the next 2 outline sections.
+- No preamble, no closing line, no em dashes.
+
+About ${words} words. (Part ${chunkNo} of ${totalChunks})`;
+}
+
+function promptMeta(article) {
+  const i = state.intake;
+  return `You are an SEO specialist writing search snippets.
+
+${projectBrief()}
+
+${compactLangRules(i.language)}
+
+The article opens with:
+${(article || '').slice(0, 1200)}
+
+Produce exactly these sections:
+
+=== META TITLES ===
+1. ...
+2. ...
+3. ...
+Keep each title to roughly 8 to 10 words. Do not count characters. Put the primary keyword near the start of title 1.
+
+=== META DESCRIPTIONS ===
+1. ...
+2. ...
+3. ...
+Keep each description to roughly 20 to 25 words. Do not count characters. State real value plus a soft call to action. No clickbait, no ellipsis.
+
+=== SLUG ===
+One lowercase hyphenated ASCII slug, no accents.
+
+${NO_PREAMBLE}`;
+}
+
+function promptImage(article) {
+  const i = state.intake;
+  return `You are an art director writing an image generation brief.
+
+${projectBrief()}
+
+${compactLangRules(i.language)}
+
+The article H1 is:
+${(article || '').split('\n').find(l => l.trim().startsWith('#')) || i.topic}
+
+Produce exactly these sections, one line each:
+
+=== IMAGE STYLE ===
+One style phrase, for example: Realistic editorial photography.
+
+=== IMAGE MOOD ===
+Mood and lighting, for example: warm morning light, shallow depth of field.
+
+=== IMAGE PROMPT ===
+A single 16:9 image generation prompt of 40 to 70 words. Describe subject, composition, light and lens. No text, no logos, no watermarks, no UI.
+
+=== IMAGE ALT ===
+Under 125 characters, must contain the primary keyword, describes what is visible.
+
+=== IMAGE FILENAME ===
+Lowercase hyphenated filename with extension.
+
+${NO_PREAMBLE}`;
+}
+
+function promptFactCheck(article) {
+  return `You are a fact checker auditing an article.
+
+${projectBrief()}
+
+Article opening:
+${(article || '').slice(0, 2500)}
+
+Article ending:
+${(article || '').slice(-1200)}
+
+Produce exactly these sections:
+
+=== FACT CHECK ===
+A markdown table with columns Claim, Status, Source URL. Status is Verified, Corrected, Unverified or Removed. Only cite sources you are confident exist. If you are not sure a URL is real, mark the claim Unverified and write "no source" in the URL column. Never invent a URL or a statistic.
+
+=== AUDITS ===
+Three short sections: uniqueness verdict, math and empirical audit (state assumptions, show formulas, reconcile any table), humanization notes (sentence length variety, passive voice, AI pattern scan).
+
+${NO_PREAMBLE}`;
+}
+
+/* A trimmed meta prompt used on retry. Pollinations answers a heavy meta
+   request with content=null and finish_reason=length, so the retry drops the
+   article excerpt and caps the output hard. */
+/* Meta length is enforced here rather than asked for in the prompt: small
+   models cannot count characters and stall until they hit the output cap. */
+function fitToRange(text, max) {
+  let t = (text || '').trim().replace(/\s+/g, ' ');
+  t = t.replace(/^[\d\-\.\)\s]+/, '').replace(/^["'“”‘’\-\s]+/, '').trim();
+  if (t.length <= max) return t;
+  let cut = t.slice(0, max);
+  const sp = cut.lastIndexOf(' ');
+  if (sp > max * 0.5) cut = cut.slice(0, sp);
+  return cut.replace(/[\s,;:\-–—]+$/, '').trim();
+}
+
+function promptMetaShort(article) {
+  const i = state.intake;
+  const h1 = (article || '').split('\n').find(l => l.trim().startsWith('#')) || i.topic;
+  return `Write search snippets for a ${i.market} article. Everything in ${i.language} only.
+
+Topic: ${i.topic}
+Title: ${h1}
+
+Answer with exactly these four headings and nothing else:
+
+=== META TITLES ===
+1.
+2.
+3.
+
+=== META DESCRIPTIONS ===
+1.
+2.
+3.
+
+=== SLUG ===
+
+Rules: keep each title to roughly 8 to 10 words. Keep each description to roughly 20 to 25 words. Do not count characters. No commentary.`;
+}
+
+/* ---------- stage runner ---------- */
+function aiLogClear() { const el = $('ai-log'); if (el) el.innerHTML = ''; }
+function aiLog(icon, text, cls) {
+  const el = $('ai-log');
+  if (!el) return;
+  const row = document.createElement('div');
+  row.className = 'ai-log-row ' + (cls || '');
+  row.innerHTML = `<span class="ai-log-icon">${icon}</span><span class="ai-log-text"></span>`;
+  row.querySelector('.ai-log-text').textContent = text;
+  el.appendChild(row);
+  el.scrollTop = el.scrollHeight;
+}
+
+/* Appends a stage result to the visible transcript so Parse & fill fields
+   still works on everything the AI produced. */
+function transcriptAppend(tag, text) {
+  const el = $('ai-response');
+  if (!el) return;
+  const block = `\n\n=== ${tag} ===\n${text}\n`;
+  el.value = (el.value ? el.value.replace(/\s*$/, '') : '') + block;
+  state.aiResponseDraft = el.value;
+}
+
+async function askAI(prompt, label, opts = {}) {
+  const minLen = opts.minLen || 120;
+  // Attempts 2 and 3 fall back to a shorter prompt, because the common
+  // failure is a provider returning an empty reply for an over-long request.
+  const shorter = opts.shorter || (() => prompt);
+  let lastErr = '';
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    if (attempt > 1) {
+      aiLog('retry', `${label}: retrying (attempt ${attempt} of ${MAX_ATTEMPTS}, shorter prompt)`, 'warn');
+      await new Promise(r => setTimeout(r, 3000));
+    }
+    try {
+      const res = await callAI(attempt === 1 ? prompt : shorter(), opts);
+      const problem = validateAIOutput(res, minLen);
+      if (problem) { lastErr = problem; continue; }
+      return { ok: true, text: cleanModelText(res.text), finish: res.finish };
+    } catch (err) {
+      lastErr = err.message || String(err);
+      // A throttle recovers on its own, so it is worth another attempt.
+      if (!isRateLimitError(lastErr) && /HTTP 4(01|03|04)/.test(lastErr)) break;
+    }
+  }
+  return { ok: false, err: lastErr };
+}
+
+/* ---------- the pipeline ---------- */
+async function generateWithAI(opts = {}) {
+  const resume = !!opts.resume;
+  const target = parseInt(state.intake.wordcount, 10) || 1800;
+  const w = state.working;
+  // In resume mode a stage is skipped when its deliverable is already present,
+  // so a single failed step does not cost a full re-run.
+  const skip = {
+    research: resume && !!(w.research && w.geo),
+    outline: resume && !!(w.outline),
+    article: resume && wordCount(w.article) >= target * 0.9,
+    meta: resume && !!(w['meta-title-a'] && w['meta-desc-a']),
+    image: resume && !!(w['image-prompt'] && w['image-alt'] && w['image-filename'])
+  };
+  const provider = state.settings.provider;
+  if (!noKeyRequired(provider) && !state.settings.apiKey) {
+    setStatus('ai-status', 'No API key, opening settings', 'err');
     openSettings();
     return;
   }
@@ -1351,70 +1737,400 @@ async function generateWithAI() {
 
   const btn = $('btn-generate-ai');
   btn.disabled = true;
-  btn.textContent = '⏳ Generating…';
-  setStatus('ai-status', `Calling ${state.settings.provider} ${state.settings.model}…`, 'busy');
+  btn.textContent = 'Generating...';
+  // A stale draft from a previous attempt used to be parsed as if it were fresh.
+  $('ai-response').value = '';
+  state.aiResponseDraft = '';
+  setStatus('parse-result', '', '');
+  aiLogClear();
+  setStatus('ai-status', `Starting with ${provider}...`, 'busy');
+  aiLog('start', `${provider} · model ${state.settings.model || defaultModelFor(provider)} · topic "${state.intake.topic}"${resume ? ' · filling missing steps only' : ''}`, 'info');
+
+  const failures = [];
+  let article = resume ? (state.working.article || '') : '';
+  if (article) aiLog('skip', `Keeping the existing article (${wordCount(article)} words)`, 'info');
 
   try {
-    const prompt = buildMegaPrompt();
-    const text = await callAI(prompt);
-    $('ai-response').value = text;
-    setStatus('ai-status', '✓ Response received — parsing…', 'ok');
-    parseAIResponse();
-    setStatus('ai-status', '✓ Fields filled', 'ok');
-    toast('Generated and parsed');
+    // Each stage is isolated: a crash in one must not discard the others' output.
+    try {
+    /* 1. Research + GEO */
+    if (skip.research) {
+      aiLog('skip', 'Research already present, skipping', 'info');
+    } else {
+    aiLog('run', 'Research and GEO prompts', 'run');
+    const r1 = await askAI(promptResearch(), 'Research', { minLen: 400 });
+    if (r1.ok) {
+      const sec = splitBySections(r1.text);
+      state.working.research = sec.RESEARCH || r1.text;
+      state.working.geo = sec.GEO || '';
+      transcriptAppend('RESEARCH', r1.text);
+      aiLog('ok', `Research and GEO prompts ready (${wordCount(r1.text)} words)`, 'ok');
+    } else {
+      failures.push('research: ' + r1.err);
+      aiLog('fail', 'Research failed: ' + r1.err, 'err');
+    }
+    }
+    pushState();
+
+    /* 2. Outline */
+    let outline = skip.outline ? state.working.outline : '';
+    if (skip.outline) {
+      aiLog('skip', 'Outline already present, skipping', 'info');
+    } else {
+    aiLog('run', 'Outline', 'run');
+    const r2 = await askAI(promptOutline(state.working.research), 'Outline', { minLen: 200 });
+    if (r2.ok) {
+      const sec = splitBySections(r2.text);
+      outline = sec.OUTLINE || r2.text;
+      state.working.outline = outline;
+      transcriptAppend('OUTLINE', outline);
+      aiLog('ok', `Outline ready (${outline.split('\n').filter(l => l.trim()).length} lines)`, 'ok');
+    } else {
+      failures.push('outline: ' + r2.err);
+      aiLog('fail', 'Outline failed: ' + r2.err, 'err');
+    }
+    }
+    pushState();
+
+    /* 3. Article, assembled from continuation chunks.
+       Free models return far less per call than requested, so the loop keeps
+       adding chunks until the word target is met or the cap is reached. */
+    if (skip.article) {
+      aiLog('skip', `Article already complete (${wordCount(article)} words), skipping`, 'info');
+      transcriptAppend('ARTICLE', article);
+    } else {
+    const budget = Math.min(MAX_CHUNKS, Math.max(2, Math.ceil(target / 300)));
+    aiLog('run', `Article: target ${target} words, up to ${budget} parts`, 'run');
+
+    const writeChunk = async (c, total) => {
+      const isFirst = c === 1;
+      const chunk = await askAI(promptArticleChunk(outline, article, isFirst, c, total), `Article part ${c}`, { minLen: 300 });
+      if (!chunk.ok) {
+        failures.push(`article part ${c}: ${chunk.err}`);
+        aiLog('fail', `Article part ${c} failed: ${chunk.err}`, 'err');
+        return false;
+      }
+      let piece = isFirst ? chunk.text : stripRepeatHead(chunk.text, article);
+      article = (article ? article + '\n\n' : '') + trimDanglingSentence(piece);
+      state.working.article = article;
+      updateArticleStats();
+      refreshBundle();
+      save();
+      const cut = chunk.finish === 'length';
+      aiLog('ok', `Article part ${c}: ${wordCount(article)} words so far${cut ? ' (hit output cap)' : ''}`, 'ok');
+      return true;
+    };
+
+    let part = 0;
+    for (; part < budget; part++) {
+      if (!await writeChunk(part + 1, budget)) break;
+      if (wordCount(article) >= target) break;
+    }
+    // Top up if the model under-delivered and there is room left.
+    while (wordCount(article) < target * 0.9 && part < MAX_CHUNKS) {
+      part++;
+      aiLog('run', `Topping up (${wordCount(article)}/${target} words)`, 'run');
+      if (!await writeChunk(part, part)) break;
+    }
+    if (article) transcriptAppend('ARTICLE', article);
+    }
+    pushState();
+
+    /* 4. Meta package */
+    if (skip.meta) {
+      aiLog('skip', 'Meta package already present, skipping', 'info');
+    } else {
+    aiLog('run', 'Meta titles, descriptions and slug', 'run');
+    const r4 = await askAI(promptMeta(article), 'Meta package', { minLen: 120, shorter: () => promptMetaShort(article) });
+    if (r4.ok) {
+      const sec = splitBySections(r4.text);
+      const titles = extractNumbered(sec['META TITLES'] || '');
+      const descs = extractNumbered(sec['META DESCRIPTIONS'] || '');
+      ['meta-title-a', 'meta-title-b', 'meta-title-c'].forEach((id, n) => {
+        if (titles[n]) state.working[id] = fitToRange(titles[n], 60);
+      });
+      ['meta-desc-a', 'meta-desc-b', 'meta-desc-c'].forEach((id, n) => {
+        if (descs[n]) state.working[id] = fitToRange(descs[n], 155);
+      });
+      if (sec.SLUG) state.working['meta-slug'] = sec.SLUG.trim().split('\n')[0].trim();
+      const nT = titles.filter(Boolean).length, nD = descs.filter(Boolean).length;
+      transcriptAppend('META TITLES', (sec['META TITLES'] || '').trim());
+      transcriptAppend('META DESCRIPTIONS', (sec['META DESCRIPTIONS'] || '').trim());
+      if (sec.SLUG) transcriptAppend('SLUG', sec.SLUG.trim());
+      aiLog(nT && nD ? 'ok' : 'warn', nT && nD
+        ? `Meta package ready: ${nT} titles, ${nD} descriptions, slug "${state.working['meta-slug'] || '-'}"`
+        : `Meta package incomplete: ${nT} titles, ${nD} descriptions`, nT && nD ? 'ok' : 'warn');
+      if (!nT || !nD) failures.push('meta: incomplete title/description set');
+    } else {
+      failures.push('meta: ' + r4.err);
+      aiLog('fail', 'Meta package failed: ' + r4.err, 'err');
+    }
+    }
+    pushState();
+
+    /* 5. Image brief */
+    if (skip.image) {
+      aiLog('skip', 'Image brief already present, skipping', 'info');
+    } else {
+    aiLog('run', 'Image brief', 'run');
+    const r5 = await askAI(promptImage(article), 'Image brief', { minLen: 100 });
+    if (r5.ok) {
+      const sec = splitBySections(r5.text);
+      const pick = (k, id) => { if (sec[k] && sec[k].trim()) state.working[id] = sec[k].trim().split('\n')[0].trim(); };
+      pick('IMAGE STYLE', 'image-style');
+      pick('IMAGE MOOD', 'image-mood');
+      if (sec['IMAGE PROMPT']) state.working['image-prompt'] = sec['IMAGE PROMPT'].trim();
+      pick('IMAGE ALT', 'image-alt');
+      pick('IMAGE FILENAME', 'image-filename');
+      const hasAll = state.working['image-prompt'] && state.working['image-alt'] && state.working['image-filename'];
+      transcriptAppend('IMAGE PROMPT', r5.text);
+      aiLog(hasAll ? 'ok' : 'warn', hasAll ? 'Image brief ready (prompt, alt, filename)' : 'Image brief incomplete', hasAll ? 'ok' : 'warn');
+      if (!hasAll) failures.push('image: incomplete brief');
+    } else {
+      failures.push('image: ' + r5.err);
+      aiLog('fail', 'Image brief failed: ' + r5.err, 'err');
+    }
+    }
+    pushState();
+
+    /* 6. Fact check and audits (nice to have, never blocks success) */
+    aiLog('run', 'Fact check and audits', 'run');
+    const r6 = await askAI(promptFactCheck(article), 'Fact check', { minLen: 150 });
+    if (r6.ok) {
+      const sec = splitBySections(r6.text);
+      if (sec['FACT CHECK']) state.working.factcheck = sec['FACT CHECK'].trim();
+      if (sec.AUDITS) state.working.audits = sec.AUDITS.trim();
+      transcriptAppend('FACT CHECK', r6.text);
+      aiLog('ok', 'Fact check and audits ready', 'ok');
+    } else {
+      aiLog('warn', 'Fact check skipped: ' + r6.err, 'warn');
+    }
+    pushState();
+
+    } catch (stageErr) {
+      failures.push('stage crash: ' + (stageErr.message || stageErr));
+      aiLog('fail', 'A stage crashed: ' + (stageErr.message || stageErr) + '. Everything produced so far is kept.', 'err');
+    }
+
+    /* Honest final verdict based on what is actually in the fields. */
+    const words = wordCount(state.working.article);
+    const hasArticle = words > 0;
+    const hasMeta = !!state.working['meta-title-a'] && !!state.working['meta-desc-a'];
+    const hasImage = !!state.working['image-prompt'];
+    const ready = hasArticle && hasMeta && hasImage;
+
+    if (ready) {
+      const note = (failures.length ? ` · ${failures.length} optional step${failures.length === 1 ? '' : 's'} had issues` : '');
+      setStatus('ai-status', `Done: ${words} word article, meta and image ready${note}`, 'ok');
+      toast('Article, meta and image are ready');
+    } else {
+      const missing = [!hasArticle && 'article', !hasMeta && 'meta', !hasImage && 'image brief'].filter(Boolean);
+      setStatus('ai-status', `Partial: missing ${missing.join(', ')}. Everything produced is kept below.`, 'err');
+      toast('Partial result: missing ' + missing.join(', '));
+    }
+    // Offer to repair only what is missing instead of re-running everything.
+    updateFillMissingButton();
+    if (failures.length) console.warn('[seo-geo-tool] pipeline issues:', failures);
   } catch (err) {
-    setStatus('ai-status', `✗ ${err.message}`, 'err');
-    toast('AI error: ' + err.message);
+    setStatus('ai-status', 'Failed: ' + (err.message || err), 'err');
+    toast('Generation failed');
+    console.error('[seo-geo-tool]', err);
   } finally {
+    pushState();
     btn.disabled = false;
     btn.textContent = '✨ Generate with AI';
   }
 }
 
-async function callAI(prompt) {
+/* Drops a repeated opening when a continuation model restarts the piece. */
+function stripRepeatHead(piece, articleSoFar) {
+  if (!piece || !articleSoFar) return piece;
+  const tail = articleSoFar.slice(-TAIL_CHARS);
+  const head = piece.slice(0, 300);
+  for (const len of [250, 180, 120]) {
+    const probe = tail.slice(-len);
+    if (probe.length < 60) continue;
+    if (head.startsWith(probe.slice(0, Math.min(80, len)))) {
+      const idx = piece.indexOf('\n');
+      return idx > 0 ? piece.slice(idx).trim() : piece;
+    }
+  }
+  return piece;
+}
+
+/* Offers the repair button whenever a deliverable is still missing. */
+function updateFillMissingButton() {
+  const w = state.working;
+  const complete = wordCount(w.article) > 0 && w['meta-title-a'] && w['meta-desc-a'] &&
+                   w['image-prompt'] && w['image-alt'] && w['image-filename'];
+  const el = $('btn-fill-missing');
+  if (el) el.style.display = complete ? 'none' : '';
+}
+
+/* Persists state and pushes it into the visible fields + bundle. */
+function pushState() {
+  hydrateWorking();
+  refreshBundle();
+  save();
+}
+
+/* Reads a provider error body without letting a JSON parse failure mask the status. */
+async function readErr(res) {
+  let raw = '';
+  try { raw = await res.text(); } catch (e) { raw = ''; }
+  try {
+    const j = JSON.parse(raw);
+    const msg = j?.error?.message || j?.message || j?.detail || j?.error;
+    if (msg) return String(msg).slice(0, 240);
+  } catch (e) {}
+  return (raw || res.statusText || 'unknown error').slice(0, 240);
+}
+
+/* The free Pollinations tier serves one reply per IP every 30 seconds and
+   reports the throttle as HTTP 402, which reads like a billing error. */
+const RATE_LIMITED = /free limit reached|rate limit|slow down|too many requests/i;
+function isRateLimitError(msg) { return RATE_LIMITED.test(msg || ''); }
+
+/* Minimum spacing between requests, per provider. */
+function minGapMs(provider) {
+  if (provider === 'pollinations') return 31000;
+  return 0;
+}
+
+/* Serialises every provider call and enforces the spacing, so a staged run
+   cannot trip the free-tier throttle halfway through. */
+let _callChain = Promise.resolve();
+let _lastCallAt = 0;
+function withRateLimit(fn) {
+  const run = async () => {
+    const gap = minGapMs(state.settings.provider);
+    const wait = _lastCallAt + gap - Date.now();
+    if (wait > 1200) {
+      aiLog('wait', `Rate limit guard: waiting ${Math.ceil(wait / 1000)}s before the next request`, 'warn');
+      await new Promise(r => setTimeout(r, wait));
+    }
+    // Timestamp on completion: the free tier counts from the end of a reply.
+    try { return await fn(); } finally { _lastCallAt = Date.now(); }
+  };
+  _callChain = _callChain.then(run, run);
+  return _callChain;
+}
+
+/* Friendly hints for the errors people actually hit. */
+function explainHttpError(provider, status, body) {
+  if (isRateLimitError(body)) {
+    return `rate limited (${status}) - the free tier allows 1 reply every 30 seconds per IP. The tool spaces its calls automatically; a retry is scheduled.`;
+  }
+  const hints = {
+    401: 'API key is missing or invalid.',
+    402: 'This model needs a paid tier on Pollinations. Use "openai-fast" for free.',
+    403: 'Access denied. Check the key and its permissions.',
+    404: 'Model or endpoint not found on this provider. Check the model name in Settings.',
+    429: 'Rate limited. The tool waits and retries automatically.'
+  };
+  const h = hints[status] || '';
+  return `HTTP ${status}${h ? ' - ' + h : ''}${body ? ' · ' + body : ''}`;
+}
+
+/* ------------------------------------------------------------------
+   callAI(prompt, opts) -> { text, finish, provider }
+   Every provider call goes through the rate-limit queue.
+   finish is the provider stop reason when reported: 'stop' | 'length' | ...
+   'length' means the model hit its output ceiling and the text is cut off.
+   ------------------------------------------------------------------ */
+async function callAI(prompt, opts = {}) {
+  return withRateLimit(() => callAIRaw(prompt, opts));
+}
+
+async function callAIRaw(prompt, opts = {}) {
   const { provider, apiKey, model, baseUrl } = state.settings;
+  const temperature = opts.temperature != null ? opts.temperature : 0.7;
+  const m = model || defaultModelFor(provider);
+
   if (provider === 'pollinations') {
-    // Pollinations.ai — free public API, no key needed
+    // Free public API. The anonymous tier is capped at a few thousand output
+    // characters per call, so long work must be split into stages.
     const res = await fetch('https://text.pollinations.ai/openai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: model || 'openai-fast',
+        model: m,
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
+        temperature,
         seed: Math.floor(Math.random() * 1e9)
       })
     });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Pollinations ${res.status}: ${errText.slice(0, 200)}`);
-    }
+    if (!res.ok) throw new Error(`Pollinations: ${explainHttpError(provider, res.status, await readErr(res))}`);
     const data = await res.json();
-    return data.choices?.[0]?.message?.content || (await res.text());
+    const text = data?.choices?.[0]?.message?.content;
+    return {
+      text: typeof text === 'string' ? text : '',
+      finish: data?.choices?.[0]?.finish_reason || 'stop',
+      provider
+    };
   }
+
   if (provider === 'ollama') {
-    // Ollama local server — OpenAI-compatible API
+    // Local Ollama server via its OpenAI-compatible route.
     const base = (baseUrl || 'http://localhost:11434/v1').replace(/\/+$/, '');
     const url = base.endsWith('/v1') ? base + '/chat/completions' : base + '/v1/chat/completions';
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ollama'
-      },
-      body: JSON.stringify({
-        model: model || 'llama3.2',
-        messages: [{ role: 'user', content: prompt }],
-        stream: false,
-        temperature: 0.7
-      })
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Ollama ${res.status}: ${errText.slice(0, 200)}`);
+    let res;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ollama' },
+        body: JSON.stringify({
+          model: m,
+          messages: [{ role: 'user', content: prompt }],
+          stream: false,
+          temperature,
+          ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {})
+        })
+      });
+    } catch (e) {
+      throw new Error('Cannot reach Ollama at ' + base + '. Start it with "ollama serve" and, if the browser blocks it, run Ollama with OLLAMA_ORIGINS=*');
     }
+    if (!res.ok) throw new Error(`Ollama: ${explainHttpError(provider, res.status, await readErr(res))}`);
     const data = await res.json();
-    return data.choices?.[0]?.message?.content || '';
+    return {
+      text: data?.choices?.[0]?.message?.content || '',
+      finish: data?.choices?.[0]?.finish_reason || 'stop',
+      provider
+    };
+  }
+
+  if (provider === 'minimax') {
+    // MiniMax Anthropic-compatible API. Custom base URL lets this point at a
+    // local MiniMax-compatible gateway instead of the public host.
+    const base = (baseUrl || 'https://api.minimax.io/anthropic').replace(/\/+$/, '');
+    const url = base.endsWith('/v1/messages') ? base : base + '/v1/messages';
+    let res;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: m,
+          max_tokens: opts.maxTokens || 16000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+    } catch (e) {
+      throw new Error('Cannot reach MiniMax at ' + base + '. Check the base URL and that the API allows browser (CORS) requests.');
+    }
+    if (!res.ok) throw new Error(`MiniMax: ${explainHttpError(provider, res.status, await readErr(res))}`);
+    const data = await res.json();
+    return {
+      text: (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n\n'),
+      finish: data.stop_reason || 'stop',
+      provider
+    };
   }
   if (provider === 'anthropic') {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1427,37 +2143,40 @@ async function callAI(prompt) {
       },
       body: JSON.stringify({
         model,
-        max_tokens: 8000,
+        max_tokens: opts.maxTokens || 16000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Anthropic ${res.status}: ${errText.slice(0, 200)}`);
-    }
+    if (!res.ok) throw new Error(`Anthropic: ${explainHttpError(provider, res.status, await readErr(res))}`);
     const data = await res.json();
-    return (data.content || [])
-      .filter(b => b.type === 'text')
-      .map(b => b.text)
-      .join('\n\n');
+    return {
+      text: (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n\n'),
+      finish: data.stop_reason || 'stop',
+      provider
+    };
   }
   if (provider === 'gemini') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent?key=${encodeURIComponent(apiKey)}`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 8000 }
+        generationConfig: {
+          temperature,
+          maxOutputTokens: opts.maxTokens || 8000
+        }
       })
     });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Gemini ${res.status}: ${errText.slice(0, 200)}`);
-    }
+    if (!res.ok) throw new Error(`Gemini: ${explainHttpError(provider, res.status, await readErr(res))}`);
     const data = await res.json();
     const parts = data.candidates?.[0]?.content?.parts || [];
-    return parts.map(p => p.text || '').join('\n\n');
+    const finish = data.candidates?.[0]?.finishReason;
+    return {
+      text: parts.map(p => p.text || '').join('\n\n'),
+      finish: finish === 'MAX_TOKENS' ? 'length' : 'stop',
+      provider
+    };
   }
   // OpenAI default
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -1469,15 +2188,65 @@ async function callAI(prompt) {
     body: JSON.stringify({
       model,
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7
+      temperature,
+      ...(opts.maxTokens ? { max_completion_tokens: opts.maxTokens } : {})
     })
   });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`OpenAI ${res.status}: ${errText.slice(0, 200)}`);
-  }
+  if (!res.ok) throw new Error(`OpenAI: ${explainHttpError(provider, res.status, await readErr(res))}`);
   const data = await res.json();
-  return data.choices?.[0]?.message?.content || '';
+  return {
+    text: data?.choices?.[0]?.message?.content || '',
+    finish: data?.choices?.[0]?.finish_reason || 'stop',
+    provider
+  };
+}
+
+/* ============================================================
+   RESPONSE VALIDATION
+   Catches the three failure modes that used to be reported as success:
+   empty output, the model echoing the prompt back, and hard truncation.
+   ============================================================ */
+const ECHO_MARKERS = [
+  'you are a senior seo',
+  'return your response using these exact delimiters',
+  '# output format',
+  '# workflow',
+  'you are an seo and geo research specialist',
+  '[your full article in markdown',
+  'this prompt asks you to'
+];
+
+function looksLikeEcho(text) {
+  const head = text.trim().slice(0, 700).toLowerCase();
+  return ECHO_MARKERS.some(m => head.includes(m));
+}
+
+/* Returns null when usable, or a human-readable reason when not. */
+function validateAIOutput(res, minLen = 120) {
+  if (!res || typeof res.text !== 'string') return 'no response';
+  const t = res.text.trim();
+  if (!t) return 'empty response';
+  if (t.length < minLen) return `response too short (${t.length} chars, expected ${minLen}+)`;
+  if (looksLikeEcho(t)) return 'the model echoed the instructions back instead of answering';
+  return null;
+}
+
+/* Strips markdown fences and chat preambles the smaller models like to add. */
+function cleanModelText(text) {
+  let t = (text || '').trim();
+  t = t.replace(/^```(?:markdown|md)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
+  t = t.replace(/^(?:sure|certainly|of course|here(?:'s| is)[^\n:]{0,80}:)\s*\n+/i, '');
+  t = t.replace(/^(?:הנה|בהחלט|כמובן)[^\n]{0,80}:\s*\n+/, '');
+  return t.trim();
+}
+
+/* Trims a mid-sentence fragment left behind when a chunk hits the output cap. */
+function trimDanglingSentence(text) {
+  if (!text) return text;
+  if (/[.!?:)\]\u05d0-\u05ea\u0600-\u06ff]\s*$/.test(text.trim())) return text.trim();
+  const cut = Math.max(text.lastIndexOf('. '), text.lastIndexOf('.\n'));
+  if (cut > text.length * 0.4) return text.slice(0, cut + 1).trim();
+  return text.trim();
 }
 
 /* ============================================================
@@ -1688,6 +2457,11 @@ Now produce the full response.`;
 function parseAIResponse() {
   const text = $('ai-response').value;
   if (!text.trim()) { toast('Paste an AI response first'); return; }
+  if (looksLikeEcho(text)) {
+    setStatus('parse-result', 'This is the prompt, not a response. Nothing was filled.', 'err');
+    toast('That is the prompt template, not an AI response');
+    return;
+  }
 
   const sections = splitBySections(text);
   let filled = 0;
@@ -1720,11 +2494,11 @@ function parseAIResponse() {
         ? ['meta-title-a','meta-title-b','meta-title-c']
         : ['meta-desc-a','meta-desc-b','meta-desc-c'];
       arr.forEach((v, i) => {
-        if (v && ids[i]) { state.working[ids[i]] = String(v).trim(); filled++; }
+        if (v && ids[i] && !isPlaceholderValue(v)) { state.working[ids[i]] = String(v).trim(); filled++; }
       });
     } else {
       const str = (typeof value === 'string') ? value.trim() : '';
-      if (str) { state.working[target] = str; filled++; }
+      if (str && !isPlaceholderValue(str)) { state.working[target] = str; filled++; }
     }
   }
 
@@ -2157,7 +2931,9 @@ function hydrate() {
    INIT
    ============================================================ */
 load();
+sanitizeState();
 hydrate();
+updateFillMissingButton();
 </script>
 </body>
 </html>

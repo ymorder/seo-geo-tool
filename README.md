@@ -34,20 +34,40 @@ The prompt also explicitly tells the AI to write the meta title and description 
 
 ## Generate with AI
 
-You can run the AI step directly in the tool without copy-pasting anywhere. Click **✨ Generate with AI** in the Generate panel — the tool calls the configured provider, parses the response, and fills every field.
+Click **✨ Generate with AI** and the tool builds the whole deliverable itself. No copy-paste needed.
 
-**Default provider: 🌱 Pollinations.ai** — free public API, no key required, works out of the box. Models: `openai-fast`, `openai-large`, `mistral`, `llama`, `qwen-coder`.
+### Why it is split into stages
 
-**Free / local alternatives** (via ⚙ Settings):
+A single "write me everything" request cannot work on free models. The free Pollinations tier caps a reply at roughly **4,600 characters (~630 words)** and returns `finish_reason=length` when you ask for more, so the response dies inside the research block and every deliverable after it is missing. The tool therefore splits the job into small independent calls:
 
-- **🦙 Ollama (local)** — runs on your hardware, no API key. Default URL `http://localhost:11434/v1`. Models: `llama3.2`, `mistral`, `qwen2.5`, `phi3`, `gemma2`. Requires [Ollama](https://ollama.com) installed and a model pulled.
-- **OpenAI** (BYOK): `gpt-4o-mini` (cheap, fast), `gpt-4o`, `gpt-4-turbo`, `o1-mini`
-- **Anthropic** (BYOK): `claude-3-5-sonnet-latest`, `claude-3-5-haiku-latest`
-- **Google Gemini** (BYOK): `gemini-1.5-flash`, `gemini-1.5-pro`, `gemini-2.0-flash-exp`
+| Stage | Output | Approx. calls |
+| --- | --- | --- |
+| Research + GEO | ranking pages, keyword map, gaps, 10 AI-answer prompts | 1 |
+| Outline | H1 · sections · FAQ | 1 |
+| Article | markdown body, written in continuation chunks | 3-10 |
+| Meta | 3 titles · 3 descriptions · slug | 1 |
+| Image | style · mood · prompt · alt · filename | 1 |
+| Fact check + audits | claims table · sources · audits | 1 |
 
-API keys are stored only in your browser's localStorage and sent directly to the provider — never through any intermediate server.
+The article is assembled across several calls because one call cannot hold 1,800 words. Each continuation receives the outline plus the tail of the text written so far, and the tool strips a repeated opening and trims any sentence left mid-way when a chunk hits the output cap.
 
-If you don't want to use BYOK, the **Copy full prompt** workflow still works exactly as before.
+Every stage is verified before it counts: empty replies, responses that merely echo the prompt back, and unusable truncations are rejected and retried once. A stage that fails never discards the stages that already succeeded, and the final status reports what is actually in the fields instead of claiming success.
+
+### Providers (Settings)
+
+| Provider | Cost | Notes |
+| --- | --- | --- |
+| 🌱 **Pollinations.ai** (default) | free, no key | Model `openai-fast`. Rate limited to **1 reply every 30 seconds per IP**, so the tool spaces its calls automatically. A full 1,800-word run takes roughly 6-8 minutes. Other models on this endpoint (`openai-large`, `mistral`, `openai`) require a paid tier. |
+| 🦙 **Ollama** (local) | free, runs on your hardware | No key. Default `http://localhost:11434/v1`. Models: `llama3.2`, `mistral`, `qwen2.5`, `phi3`, `gemma2`. Start with `ollama serve`; if the browser blocks it, run Ollama with `OLLAMA_ORIGINS=*`. |
+| **MiniMax** | BYOK | Anthropic-compatible endpoint `https://api.minimax.io/anthropic`, models `MiniMax-M3.1-Flash` / `MiniMax-M3`. Paste your own base URL to point at a local MiniMax-compatible gateway instead. |
+| **Google Gemini** | free tier with a key | `gemini-2.0-flash`, `gemini-1.5-flash`. Much higher output limit, so a run finishes far faster. |
+| **OpenAI** / **Anthropic** | BYOK | `gpt-4o-mini`, `gpt-4o`, `claude-3-5-sonnet-latest`, and similar. |
+
+API keys are stored only in your browser's localStorage and sent directly to the provider, never through any intermediate server.
+
+**Tip:** for the same zero cost but a much faster run, use a Gemini free-tier key. The staged pipeline is what makes the no-key path reliable, not fast.
+
+If you don't want to use any provider, the **Copy full prompt (manual)** workflow works exactly as before.
 
 ## Checker mode
 
