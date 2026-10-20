@@ -1,0 +1,2057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SEO/GEO Content Tool — Writer + Checker</title>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --panel: #ffffff;
+    --panel-2: #fafaf8;
+    --border: #e5e5e0;
+    --border-strong: #d4d4ce;
+    --text: #1a1a1a;
+    --text-muted: #6b6b66;
+    --text-faint: #9a9a94;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-soft: #eff6ff;
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --writer: #7c3aed;
+    --writer-soft: #f5f3ff;
+    --checker: #0891b2;
+    --checker-soft: #ecfeff;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
+    --radius: 8px;
+    --radius-sm: 6px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Monaco, Consolas, "Liberation Mono", monospace;
+  }
+  [data-theme="dark"] {
+    --bg: #0f0f10;
+    --panel: #1a1a1c;
+    --panel-2: #222225;
+    --border: #2e2e31;
+    --border-strong: #3a3a3d;
+    --text: #ececec;
+    --text-muted: #a1a1a0;
+    --text-faint: #6f6f6d;
+    --accent: #60a5fa;
+    --accent-hover: #93c5fd;
+    --accent-soft: #1e3a5f;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --writer: #a78bfa;
+    --writer-soft: #2d1f4a;
+    --checker: #22d3ee;
+    --checker-soft: #0c3d4a;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; }
+  input, textarea, select { font-family: inherit; font-size: inherit; color: var(--text); }
+
+  /* Layout */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  header.topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 18px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .brand {
+    font-weight: 700; font-size: 15px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .brand-mark {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: linear-gradient(135deg, var(--writer) 0%, var(--checker) 100%);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-weight: 800; font-size: 12px;
+  }
+  .mode-switch {
+    display: inline-flex; background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 3px; gap: 2px;
+  }
+  .mode-btn {
+    border: 0; background: transparent; color: var(--text-muted);
+    padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .mode-btn.active { background: var(--panel); color: var(--text); box-shadow: var(--shadow); }
+  .mode-btn.writer.active { color: var(--writer); }
+  .mode-btn.checker.active { color: var(--checker); }
+  .spacer { flex: 1; }
+  .icon-btn {
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 6px 10px; cursor: pointer;
+    color: var(--text-muted); font-size: 13px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--border-strong); }
+  .icon-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .icon-btn.primary:hover { background: var(--accent-hover); }
+  .icon-btn.writer { background: var(--writer); color: white; border-color: var(--writer); }
+  .icon-btn.checker { background: var(--checker); color: white; border-color: var(--checker); }
+
+  /* Main grid */
+  .main { flex: 1; display: grid; grid-template-columns: 280px 1fr; min-height: 0; }
+  .sidebar {
+    border-right: 1px solid var(--border); background: var(--panel);
+    padding: 14px 10px; overflow-y: auto;
+  }
+  .content { padding: 22px 28px; overflow-y: auto; }
+
+  /* Sidebar nav */
+  .nav-section-title {
+    font-size: 11px; font-weight: 700; color: var(--text-faint);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 0 10px; margin: 14px 0 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer;
+    color: var(--text-muted); font-size: 13px; font-weight: 500;
+    border: 0; background: transparent; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--panel-2); color: var(--text); }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .nav-item .stage-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--panel-2); border: 1px solid var(--border);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+  .nav-item.active .stage-num { background: var(--accent); color: white; border-color: var(--accent); }
+  .nav-item.done .stage-num { background: var(--success); color: white; border-color: var(--success); }
+  .nav-item .nav-label { flex: 1; }
+  .nav-item .nav-status {
+    font-size: 10px; padding: 1px 6px; border-radius: 10px;
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text-faint);
+  }
+  .nav-item.done .nav-status { background: rgba(22,163,74,0.1); color: var(--success); border-color: transparent; }
+
+  /* Cards / sections */
+  .panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px;
+    margin-bottom: 18px; box-shadow: var(--shadow);
+  }
+  .panel-header {
+    display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;
+  }
+  .panel-title { font-size: 18px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .panel-subtitle { font-size: 13px; color: var(--text-muted); margin: 0; }
+  .panel-actions { margin-left: auto; display: flex; gap: 6px; flex-shrink: 0; }
+
+  /* Form */
+  .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 16px; }
+  .form-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .form-grid.cols-1 { grid-template-columns: 1fr; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field.full { grid-column: 1 / -1; }
+  .label {
+    font-size: 12px; font-weight: 600; color: var(--text-muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .label .req { color: var(--danger); }
+  .input, .textarea, .select {
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 8px 10px; background: var(--panel-2); color: var(--text);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+  }
+  .input:focus, .textarea:focus, .select:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .textarea { font-family: var(--font); resize: vertical; min-height: 120px; line-height: 1.55; }
+  .textarea.mono { font-family: var(--font-mono); font-size: 13px; }
+  .textarea.tall { min-height: 320px; }
+  .help {
+    font-size: 12px; color: var(--text-faint); line-height: 1.5;
+    background: var(--panel-2); border-left: 3px solid var(--accent);
+    padding: 10px 12px; border-radius: var(--radius-sm); margin-top: 8px;
+  }
+  .help.writer { border-color: var(--writer); }
+  .help.checker { border-color: var(--checker); }
+  .help strong { color: var(--text); }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .btn {
+    border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); padding: 7px 12px; border-radius: var(--radius-sm);
+    cursor: pointer; font-weight: 500; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { border-color: var(--border-strong); }
+  .btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn.primary:hover { background: var(--accent-hover); }
+  .btn.writer { background: var(--writer); color: white; border-color: var(--writer); }
+  .btn.checker { background: var(--checker); color: white; border-color: var(--checker); }
+  .btn.ghost { background: transparent; border-color: transparent; }
+  .btn.ghost:hover { background: var(--panel-2); }
+  .btn.small { padding: 4px 8px; font-size: 12px; }
+
+  /* Stage status */
+  .stage-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600;
+    padding: 3px 8px; border-radius: 10px;
+    background: var(--panel-2); border: 1px solid var(--border);
+  }
+  .stage-status.pending { color: var(--text-faint); }
+  .stage-status.in-progress { color: var(--warning); background: rgba(217,119,6,0.08); border-color: transparent; }
+  .stage-status.done { color: var(--success); background: rgba(22,163,74,0.1); border-color: transparent; }
+  .stage-status .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+  }
+
+  /* Toggles */
+  .checkbox-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 0; font-size: 13px; color: var(--text-muted);
+    cursor: pointer;
+  }
+  .checkbox-row input { margin: 0; accent-color: var(--accent); }
+
+  /* Intake / setup */
+  .intake-banner {
+    background: linear-gradient(135deg, var(--writer-soft) 0%, var(--checker-soft) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px; margin-bottom: 18px;
+  }
+  .intake-banner h2 { margin: 0 0 4px; font-size: 16px; }
+  .intake-banner p { margin: 0; color: var(--text-muted); font-size: 13px; }
+
+  /* Handoff modal */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: none; align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--panel); border-radius: var(--radius); padding: 24px;
+    width: min(560px, 92vw); box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  }
+  .modal h2 { margin: 0 0 6px; font-size: 18px; }
+  .modal p { margin: 0 0 16px; color: var(--text-muted); font-size: 13px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: var(--bg);
+    padding: 9px 16px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+    z-index: 200;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.show.up { transform: translateX(-50%) translateY(-6px); }
+
+  /* Progress bar */
+  .progress {
+    height: 4px; background: var(--panel-2); border-radius: 4px;
+    overflow: hidden; margin: 10px 0 0;
+  }
+  .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+
+  /* Sections within a stage */
+  .sub-section {
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 12px 14px; margin-bottom: 12px; background: var(--panel-2);
+  }
+  .sub-section-title {
+    font-size: 12px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* Checker specific */
+  .checker-section {
+    border-left: 3px solid var(--checker); padding-left: 14px;
+  }
+  .priority-tag {
+    display: inline-block; padding: 1px 7px; border-radius: 10px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .priority-tag.p1 { background: rgba(220,38,38,0.1); color: var(--danger); }
+  .priority-tag.p2 { background: rgba(217,119,6,0.1); color: var(--warning); }
+  .priority-tag.p3 { background: rgba(37,99,235,0.1); color: var(--accent); }
+  .priority-tag.p4 { background: rgba(107,107,102,0.1); color: var(--text-muted); }
+  .priority-tag.p5 { background: rgba(107,107,102,0.1); color: var(--text-muted); }
+
+  .fix-block {
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 12px 14px; margin-bottom: 10px; background: var(--panel-2);
+  }
+  .fix-original, .fix-suggested {
+    padding: 8px 10px; border-radius: 4px; font-family: var(--font-mono);
+    font-size: 12.5px; line-height: 1.55; margin: 4px 0;
+  }
+  .fix-original { background: rgba(220,38,38,0.06); border-left: 3px solid var(--danger); }
+  .fix-suggested { background: rgba(22,163,74,0.06); border-left: 3px solid var(--success); }
+  .fix-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-faint); margin-top: 6px;
+  }
+  .fix-reason { font-size: 12.5px; color: var(--text-muted); margin-top: 8px; font-style: italic; }
+
+  /* Empty state */
+  .empty {
+    text-align: center; padding: 40px 20px; color: var(--text-muted);
+    background: var(--panel-2); border: 1px dashed var(--border); border-radius: var(--radius);
+  }
+  .empty h3 { margin: 0 0 6px; color: var(--text); }
+  .empty p { margin: 0; font-size: 13px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .tab {
+    border: 0; background: transparent; padding: 8px 14px; cursor: pointer;
+    color: var(--text-muted); font-weight: 500; font-size: 13px;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  /* Hidden */
+  .hidden { display: none !important; }
+
+  /* Print / export view */
+  .export-view {
+    background: white; color: #111; padding: 40px;
+    font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
+    white-space: pre-wrap; max-width: 820px; margin: 0 auto;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .sidebar.mobile-open { display: block; position: fixed; inset: 56px 0 0; z-index: 40; }
+    .form-grid, .form-grid.cols-3 { grid-template-columns: 1fr; }
+    .panel { padding: 14px; }
+    .content { padding: 14px; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+  /* Divider */
+  hr { border: 0; border-top: 1px solid var(--border); margin: 18px 0; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">S</span>
+      <span>SEO/GEO Tool</span>
+    </div>
+
+    <div class="mode-switch" role="tablist">
+      <button class="mode-btn writer active" data-mode="writer">
+        <span>✍️</span> Writer
+      </button>
+      <button class="mode-btn checker" data-mode="checker">
+        <span>🔍</span> Checker
+      </button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <button class="icon-btn" id="btn-mobile-nav" title="Toggle stages" style="display:none;">☰</button>
+    <button class="icon-btn" id="btn-theme" title="Toggle theme">🌓 Theme</button>
+    <button class="icon-btn" id="btn-export" title="Export project">⬇ Export</button>
+    <button class="icon-btn" id="btn-import" title="Import project">⬆ Import</button>
+    <button class="icon-btn" id="btn-clear" title="Reset project">🗑 Reset</button>
+  </header>
+
+  <!-- WRITER VIEW -->
+  <div class="main" id="writer-view">
+    <aside class="sidebar" id="writer-sidebar">
+      <div class="nav-section-title">Setup</div>
+      <button class="nav-item" data-stage="intake">
+        <span class="stage-num">i</span>
+        <span class="nav-label">Intake</span>
+        <span class="nav-status" id="status-intake"></span>
+      </button>
+
+      <div class="nav-section-title">Writing Stages</div>
+      <button class="nav-item" data-stage="stage1">
+        <span class="stage-num">1</span>
+        <span class="nav-label">Competitor Research</span>
+        <span class="nav-status" id="status-stage1"></span>
+      </button>
+      <button class="nav-item" data-stage="stage2">
+        <span class="stage-num">2</span>
+        <span class="nav-label">GEO Prompts</span>
+        <span class="nav-status" id="status-stage2"></span>
+      </button>
+      <button class="nav-item" data-stage="stage3">
+        <span class="stage-num">3</span>
+        <span class="nav-label">Outline</span>
+        <span class="nav-status" id="status-stage3"></span>
+      </button>
+      <button class="nav-item" data-stage="stage4">
+        <span class="stage-num">4</span>
+        <span class="nav-label">Article</span>
+        <span class="nav-status" id="status-stage4"></span>
+      </button>
+      <button class="nav-item" data-stage="stage5">
+        <span class="stage-num">5</span>
+        <span class="nav-label">Meta Tags</span>
+        <span class="nav-status" id="status-stage5"></span>
+      </button>
+      <button class="nav-item" data-stage="stage6">
+        <span class="stage-num">6</span>
+        <span class="nav-label">Image</span>
+        <span class="nav-status" id="status-stage6"></span>
+      </button>
+      <button class="nav-item" data-stage="stage7">
+        <span class="stage-num">7</span>
+        <span class="nav-label">Fact Check</span>
+        <span class="nav-status" id="status-stage7"></span>
+      </button>
+      <button class="nav-item" data-stage="stage8">
+        <span class="stage-num">8</span>
+        <span class="nav-label">Uniqueness & Math</span>
+        <span class="nav-status" id="status-stage8"></span>
+      </button>
+      <button class="nav-item" data-stage="stage9">
+        <span class="stage-num">9</span>
+        <span class="nav-label">Humanization</span>
+        <span class="nav-status" id="status-stage9"></span>
+      </button>
+
+      <div class="nav-section-title">Deliver</div>
+      <button class="nav-item" data-stage="final">
+        <span class="stage-num">★</span>
+        <span class="nav-label">Final Bundle</span>
+        <span class="nav-status" id="status-final"></span>
+      </button>
+    </aside>
+
+    <main class="content" id="writer-content">
+      <!-- Intake -->
+      <section class="stage-section" data-section="intake">
+        <div class="intake-banner">
+          <h2>👋 Before we start writing</h2>
+          <p>Fill in the project basics. The writer will use these to scope every stage.</p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Project Intake</h1>
+              <p class="panel-subtitle">Required: topic + language + market. Everything else has a sensible default.</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field full">
+              <label class="label">Topic / Primary Keyword <span class="req">*</span></label>
+              <input class="input" id="topic" placeholder="e.g. how to refinance a mortgage in 2026" />
+            </div>
+            <div class="field">
+              <label class="label">Target Language <span class="req">*</span></label>
+              <select class="select" id="language">
+                <option value="">— Select —</option>
+                <option>English</option>
+                <option>Hebrew</option>
+                <option>Spanish</option>
+                <option>German</option>
+                <option>French</option>
+                <option>Italian</option>
+                <option>Portuguese</option>
+                <option>Arabic</option>
+                <option>Dutch</option>
+                <option>Polish</option>
+                <option>Japanese</option>
+                <option>Chinese (Simplified)</option>
+                <option>Other…</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label">Target Country / Market <span class="req">*</span></label>
+              <input class="input" id="market" placeholder="e.g. United States, Israel, UK, Germany" />
+            </div>
+            <div class="field">
+              <label class="label">Target Audience</label>
+              <input class="input" id="audience" placeholder="e.g. first-time homebuyers aged 30-45" />
+            </div>
+            <div class="field">
+              <label class="label">Website / Brand</label>
+              <input class="input" id="brand" placeholder="e.g. example.com — leave blank for generic" />
+            </div>
+            <div class="field">
+              <label class="label">Word Count Target</label>
+              <input class="input" id="wordcount" type="number" min="300" max="20000" placeholder="e.g. 1800" value="1800" />
+            </div>
+            <div class="field">
+              <label class="label">Content Type</label>
+              <select class="select" id="contenttype">
+                <option>How-to guide</option>
+                <option>Listicle</option>
+                <option>Comparison / vs.</option>
+                <option>Explainer</option>
+                <option>Best-of / roundup</option>
+                <option>Case study</option>
+                <option>Opinion / thought leadership</option>
+                <option>Local SEO article</option>
+                <option>Product / landing page</option>
+                <option>Glossary / definition</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label class="label">Notes / Constraints</label>
+              <textarea class="textarea" id="notes" placeholder="Anything the writer should know: tone, banned terms, must-include facts, internal links, regulatory caveats…" style="min-height:70px;"></textarea>
+            </div>
+          </div>
+
+          <hr />
+
+          <div class="help writer">
+            <strong>Assumptions shown at top of the article</strong> when audience, brand or word count is missing.
+            The intake never blocks writing — defaults are: general consumer audience, no specific brand, 1,800 words.
+          </div>
+
+          <div class="btn-row">
+            <button class="btn primary" id="btn-start-writing">Start Writing →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stage 1: Competitor Research -->
+      <section class="stage-section hidden" data-section="stage1">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Stage 1 · Competitor Research</h1>
+              <p class="panel-subtitle">Analyze top-ranking articles. Find gaps before you write a word.</p>
+            </div>
+            <div class="panel-actions">
+              <select class="select small" id="status-stage1-select" style="width:auto;">
+                <option value="pending">Pending</option>
+                <option value="in-progress">In progress</option>
+                <option value="done">Done</option>
+              </select>
+              <button class="btn ghost small" data-copy-target="s1-output">📋 Copy</button>
+            </div>
+          </div>
+
+          <div class="help writer">
+            <strong>What to deliver:</strong>
+            <ul style="margin:6px 0 0 18px; padding:0;">
+              <li>Top organic ranking articles for the primary keyword + close variations.</li>
+              <li><strong>Keyword Map:</strong> primary keyword, secondary keywords, related entities, PAA questions.</li>
+              <li><strong>Content Gaps:</strong> missing subtopics, weak logic, unverified data, missing risk factors or exceptions.</li>
+            </ul>
+          </div>
+
+          <div class="form-grid" style="margin-top:14px;">
+            <div class="field full">
+              <label class="label">Top-ranking competitor URLs</label>
+              <textarea class="textarea mono" id="s1-urls" placeholder="https://example.com/article-1&#10;https://example.com/article-2&#10;https://example.com/article-3" style="min-height:90px;"></textarea>
+            </div>
+            <div class="field full">
+              <label class="label">Keyword Map (primary / secondary / entities / PAA)</label>
+              <textarea class="textarea mono" id="s1-keywords" placeholder="Primary: ...&#10;Secondary: ...&#10;Related entities: ...&#10;PAA: ..." style="min-height:120px;"></textarea>
+            </div>
+            <div class="field full">
+              <label class="label">Content Gaps & Opportunities</label>
+              <textarea class="textarea" id="s1-gaps" placeholder="What the top results miss or get wrong…" style="min-height:120px;"></textarea>
+            </div>
+            <div class="field full">
+              <label class="label">Notes from SERP scan (intent, format, length patterns)</label>
+              <textarea class="textarea" id="s1-notes" placeholder="Informational / commercial / mixed intent. Average word count. Common formats." style="min-height:80px;"></textarea>
+            </div>
+          </div>
+
+          <div class="form-grid cols-1" style="margin-top:8px;">
+            <div class="field">
+              <label class="label">Consolidated stage output (markdown — copy this)</label>
+              <textarea class="textarea mono" id="s1-output" placeholder="Compiled output that can be passed downstream…" style="min-height:180px;"></textarea>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" data-prev="intake">← Intake</button>
+            <button class="btn primary" data-next="stage2">Stage 2 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stage 2: GEO -->
+      <section class="stage-section hidden" data-section="stage2">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Stage 2 · GEO Prompts (AI Search)</h1>
+              <p class="panel-subtitle">Build quote-ready answers so ChatGPT, Gemini, Perplexity and Google AI cite you.</p>
+            </div>
+            <div class="panel-actions">
+              <select class="select small" id="status-stage2-select" style="width:auto;">
+                <option value="pending">Pending</option>
+                <option value="in-progress">In progress</option>
+                <option value="done">Done</option>
+              </select>
+              <button class="btn ghost small" data-copy-target="s2-output">📋 Copy</button>
+            </div>
+          </div>
+
+          <div class="help writer">
+            <strong>Generate 10–15 realistic user prompts</strong> across styles: informational, how-to, best, comparison, definition.
+            For each, write a 2–3 sentence direct answer optimized to be cited.
+          </div>
+
+          <div class="form-grid" style="margin-top:14px;">
+            <div class="field full">
+              <label class="label">User prompts (10–15) with quote-ready answers</label>
+              <textarea class="textarea mono" id="s2-prompts" placeholder="Q1: ...&#10;A: ...&#10;&#10;Q2: ..." style="min-height:280px;"></textarea>
+            </div>
+            <div class="field full">
+              <label class="label">Entities / facts to surface for AI citation</label>
+              <textarea class="textarea" id="s2-entities" placeholder="Definitions, statistics, named frameworks, dates that AIs should pull from this article." style="min-height:80px;"></textarea>
+            </div>
+          </div>
+
+          <div class="form-grid cols-1" style="margin-top:8px;">
+            <div class="field">
+              <label class="label">Consolidated stage output (markdown — copy this)</label>
+              <textarea class="textarea mono" id="s2-output" style="min-height:140px;"></textarea>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" data-prev="stage1">← Stage 1</button>
+            <button class="btn primary" data-next="stage3">Stage 3 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stage 3: Outline -->
+      <section class="stage-section hidden" data-section="stage3">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Stage 3 · Outline</h1>
+              <p class="panel-subtitle">Structure with asymmetry. Vary heading depths, list lengths, paragraph styles.</p>
+            </div>
+            <div class="panel-actions">
+              <select class="select small" id="status-stage3-select" style="width:auto;">
+                <option value="pending">Pending</option>
+                <option value="in-progress">In progress</option>
+                <option value="done">Done</option>
+              </select>
+              <button class="btn ghost small" data-copy-target="s3-output">📋 Copy</button>
+            </div>
+          </div>
+
+          <div class="help writer">
+            <strong>Structure:</strong> 1 H1 with primary keyword · brief direct intro · streamlined H2/H3 · FAQ (4–6 Qs) ·
+            conclusion · natural structural variation. No rigid template.
+          </div>
+
+          <div class="form-grid" style="margin-top:14px;">
+            <div class="field full">
+              <label class="label">H1 (with primary keyword)</label>
+              <input class="input" id="s3-h1" placeholder="e.g. How to Refinance a Mortgage in 2026: A Complete Guide" />
+            </div>
+            <div class="field full">
+              <label class="label">Working title (internal — can differ from H1)</label>
+              <input class="input" id="s3-title" placeholder="e.g. Mortgage refinance playbook 2026" />
+            </div>
+            <div class="field full">
+              <label class="label">Outline (H2/H3 + key points per section)</label>
+              <textarea class="textarea mono" id="s3-outline" placeholder="H2: ...&#10;  - point&#10;  - point&#10;&#10;H2: ...&#10;  H3: ..." style="min-height:300px;"></textarea>
+            </div>
+            <div class="field full">
+              <label class="label">FAQ questions (4–6)</label>
+              <textarea class="textarea mono" id="s3-faq" placeholder="Q1: ...&#10;Q2: ..." style="min-height:90px;"></textarea>
+            </div>
+          </div>
+
+          <div class="form-grid cols-1" style="margin-top:8px;">
+            <div class="field">
+              <label class="label">Consolidated outline (markdown — copy this)</label>
+              <textarea class="textarea mono" id="s3-output" style="min-height:160px;"></textarea>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" data-prev="stage2">← Stage 2</button>
+            <button class="btn primary" data-next="stage4">Stage 4 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stage 4: Article -->
+      <section class="stage-section hidden" data-section="stage4">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Stage 4 · Article Body</h1>
+              <p class="panel-subtitle">The publish-ready text. Follow every rule in the writing guidelines.</p>
+            </div>
+            <div class="panel-actions">
+              <select class="select small" id="status-stage4-select" style="width:auto;">
+                <option value="pending">Pending</option>
+                <option value="in-progress">In progress</option>
+                <option value="done">Done</option>
+              </select>
+              <button class="btn ghost small" data-copy-target="s4-article">📋 Copy</button>
+              <button class="btn ghost small" id="btn-wordcount-check">🔢 Count</button>
+            </div>
+          </div>
+
+          <div class="help writer">
+            <strong>Writing rules:</strong>
+            <ul style="margin:6px 0 0 18px; padding:0;">
+              <li><strong>Direct opening:</strong> answer the main query in the first 2–3 sentences. No filler.</li>
+              <li><strong>H2 openings:</strong> 1–2 sentence direct answer before expanding.</li>
+              <li><strong>Tone:</strong> expert, natural, human. No em dashes (—). Banned: delve, unlock, game changer, seamless, "in conclusion", לצלול, הסיבה לכך פשוטה.</li>
+              <li><strong>Structural asymmetry:</strong> vary heading depths, list lengths, paragraph cadence.</li>
+              <li><strong>Qualified statements:</strong> "depending on the framework", "subject to specific regulatory guidelines".</li>
+              <li><strong>Strict language purity:</strong> pure character set, orthographic perfection, correct specialized terminology.</li>
+            </ul>
+          </div>
+
+          <div class="form-grid cols-1" style="margin-top:14px;">
+            <div class="field">
+              <label class="label">Final article (markdown — full body, H2/H3, FAQ, conclusion)</label>
+              <textarea class="textarea mono tall" id="s4-article" placeholder="# H1 with primary keyword&#10;&#10;Direct intro paragraph…&#10;&#10;## H2…&#10;&#10;## H2…&#10;&#10;## FAQ&#10;..."></textarea>
+              <div id="s4-wordcount" style="font-size:12px; color:var(--text-faint); margin-top:6px;">Words: 0 · Characters: 0</div>
+            </div>
+            <div class="field">
+              <label class="label">Assumptions (auto-shown at top if any input was defaulted)</label>
+              <textarea class="textarea" id="s4-assumptions" placeholder="e.g. Audience: general US homeowners. Brand: none. Target length: 1,800 words." style="min-height:70px;"></textarea>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" data-prev="stage3">← Stage 3</button>
+            <button class="btn primary" data-next="stage5">Stage 5 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stage 5: Meta Tags -->
+      <section class="stage-section hidden" data-section="stage5">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Stage 5 · Meta Tags & Slug</h1>
+              <p class="panel-subtitle">3 title options, 3 description options, 1 URL slug. Pick the recommended one.</p>
+            </div>
+            <div class="panel-actions">
+              <select class="select small" id="status-stage5-select" style="width:auto;">
+                <option value="pending">Pending</option>
+                <option value="in-progress">In progress</option>
+                <option value="done">Done</option>
+              </select>
+              <button class="btn ghost small" data-copy-target="s5-output">📋 Copy</button>
+            </div>
+          </div>
+
+          <div class="help writer">
+            <strong>Specs:</strong> Meta Title 50–60 chars · primary keyword near start · Meta Description 140–155 chars ·
+            factual value + soft CTA · URL slug hyphenated English.
+          </div>
+
+          <div class="form-grid" style="margin-top:14px;">
+            <div class="field full">
+              <label class="label">Meta title — Option A <span id="s5-ta-len"></span></label>
+              <input class="input" id="s5-ta" placeholder="Primary keyword — value prop (50–60 chars)" />
+            </div>
+            <div class="field full">
+              <label class="label">Meta title — Option B <span id="s5-tb-len"></span></label>
+              <input class="input" id="s5-tb" />
+            </div>
+            <div class="field full">
+              <label class="label">Meta title — Option C (recommended pick) <span id="s5-tc-len"></span></label>
+              <input class="input" id="s5-tc" />
+            </div>
+            <div class="field full">
+              <label class="label">Meta description — Option A <span id="s5-da-len"></span></label>
+              <input class="input" id="s5-da" placeholder="Hook + primary keyword + value + soft CTA (140–155 chars)" />
+            </div>
+            <div class="field full">
+              <label class="label">Meta description — Option B <span id="s5-db-len"></span></label>
+              <input class="input" id="s5-db" />
+            </div>
+            <div class="field full">
+              <label class="label">Meta description — Option C (recommended pick) <span id="s5-dc-len"></span></label>
+              <input class="input" id="s5-dc" />
+            </div>
+            <div class="field full">
+              <label class="label">URL slug (hyphenated English)</label>
+              <input class="input mono" id="s5-slug" placeholder="primary-keyword-value" />
+            </div>
+          </div>
+
+          <div class="form-grid cols-1" style="margin-top:8px;">
+            <div class="field">
+              <label class="label">Consolidated meta package (markdown)</label>
+              <textarea class="textarea mono" id="s5-output" style="min-height:140px;"></textarea>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" data-prev="stage4">← Stage 4</button>
+            <button class="btn primary" data-next="stage6">Stage 6 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stage 6: Image -->
+      <section class="stage-section hidden" data-section="stage6">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Stage 6 · Featured Image</h1>
+              <p class="panel-subtitle">16:9 image generation prompt + alt text + filename.</p>
+            </div>
+            <div class="panel-actions">
+              <select class="select small" id="status-stage6-select" style="width:auto;">
+                <option value="pending">Pending</option>
+                <option value="in-progress">In progress</option>
+                <option value="done">Done</option>
+              </select>
+              <button class="btn ghost small" data-copy-target="s6-output">📋 Copy</button>
+            </div>
+          </div>
+
+          <div class="help writer">
+            <strong>Prompt must:</strong> 16:9 · realistic editorial photography OR modern abstract conceptual art ·
+            <strong>no text, no logos</strong> · specific subject + composition + lighting.
+          </div>
+
+          <div class="form-grid" style="margin-top:14px;">
+            <div class="field full">
+              <label class="label">Image generation prompt (16:9, no text/logos)</label>
+              <textarea class="textarea mono" id="s6-prompt" placeholder="A realistic photograph of ..." style="min-height:130px;"></textarea>
+            </div>
+            <div class="field">
+              <label class="label">Alt text (with primary keyword)</label>
+              <input class="input" id="s6-alt" />
+            </div>
+            <div class="field">
+              <label class="label">Image filename (hyphenated, with extension)</label>
+              <input class="input mono" id="s6-filename" placeholder="primary-keyword-hero.jpg" />
+            </div>
+            <div class="field">
+              <label class="label">Style</label>
+              <select class="select" id="s6-style">
+                <option>Realistic editorial photography</option>
+                <option>Modern abstract conceptual art</option>
+                <option>Minimalist illustration</option>
+                <option>Documentary / candid</option>
+                <option>Studio product photography</option>
+                <option>Cinematic wide shot</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label">Mood / lighting</label>
+              <input class="input" id="s6-mood" placeholder="e.g. soft natural daylight, warm tones" />
+            </div>
+          </div>
+
+          <div class="form-grid cols-1" style="margin-top:8px;">
+            <div class="field">
+              <label class="label">Consolidated image package (markdown)</label>
+              <textarea class="textarea mono" id="s6-output" style="min-height:120px;"></textarea>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" data-prev="stage5">← Stage 5</button>
+            <button class="btn primary" data-next="stage7">Stage 7 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stage 7: Fact Check -->
+      <section class="stage-section hidden" data-section="stage7">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Stage 7 · Fact Check & Source Verification</h1>
+              <p class="panel-subtitle">Every claim, statistic, date and named entity verified against authoritative sources.</p>
+            </div>
+            <div class="panel-actions">
+              <select class="select small" id="status-stage7-select" style="width:auto;">
+                <option value="pending">Pending</option>
+                <option value="in-progress">In progress</option>
+                <option value="done">Done</option>
+              </select>
+              <button class="btn ghost small" data-copy-target="s7-output">📋 Copy</button>
+            </div>
+          </div>
+
+          <div class="form-grid cols-1" style="margin-top:14px;">
+            <div class="field">
+              <label class="label">Fact Check Table (markdown — Claim · Status · Source URL)</label>
+              <textarea class="textarea mono" id="s7-table" placeholder="| Claim | Status | Source |
+| --- | --- | --- |
+| ... | Verified | https://... |
+| ... | Corrected | https://... |" style="min-height:240px;"></textarea>
+            </div>
+            <div class="field">
+              <label class="label">Full source list (clickable URLs)</label>
+              <textarea class="textarea mono" id="s7-sources" placeholder="1. https://...&#10;2. https://..." style="min-height:140px;"></textarea>
+            </div>
+            <div class="field">
+              <label class="label">Consolidated fact-check package (markdown)</label>
+              <textarea class="textarea mono" id="s7-output" style="min-height:120px;"></textarea>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" data-prev="stage6">← Stage 6</button>
+            <button class="btn primary" data-next="stage8">Stage 8 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stage 8 -->
+      <section class="stage-section hidden" data-section="stage8">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Stage 8 · Uniqueness & Math Audit</h1>
+              <p class="panel-subtitle">Confirm the text is unique and every number reconciles.</p>
+            </div>
+            <div class="panel-actions">
+              <select class="select small" id="status-stage8-select" style="width:auto;">
+                <option value="pending">Pending</option>
+                <option value="in-progress">In progress</option>
+                <option value="done">Done</option>
+              </select>
+              <button class="btn ghost small" data-copy-target="s8-output">📋 Copy</button>
+            </div>
+          </div>
+
+          <div class="form-grid cols-1" style="margin-top:14px;">
+            <div class="field">
+              <label class="label">Uniqueness check results (tool used + verdict)</label>
+              <textarea class="textarea" id="s8-uniqueness" placeholder="e.g. Copyscape: 100% unique. Quetext: no significant matches above 8%." style="min-height:80px;"></textarea>
+            </div>
+            <div class="field">
+              <label class="label">Math / empirical audit (assumptions, formulas, table reconciliation)</label>
+              <textarea class="textarea mono" id="s8-math" placeholder="List each calculation, the inputs used, and the expected result. Confirm every table cell reconciles." style="min-height:140px;"></textarea>
+            </div>
+            <div class="field">
+              <label class="label">Consolidated audit package (markdown)</label>
+              <textarea class="textarea mono" id="s8-output" style="min-height:100px;"></textarea>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" data-prev="stage7">← Stage 7</button>
+            <button class="btn primary" data-next="stage9">Stage 9 →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stage 9 -->
+      <section class="stage-section hidden" data-section="stage9">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Stage 9 · Humanization & Style Verification</h1>
+              <p class="panel-subtitle">Sentence variety, natural transitions, no AI cadence residue.</p>
+            </div>
+            <div class="panel-actions">
+              <select class="select small" id="status-stage9-select" style="width:auto;">
+                <option value="pending">Pending</option>
+                <option value="in-progress">In progress</option>
+                <option value="done">Done</option>
+              </select>
+              <button class="btn ghost small" data-copy-target="s9-output">📋 Copy</button>
+            </div>
+          </div>
+
+          <div class="form-grid cols-1" style="margin-top:14px;">
+            <div class="field">
+              <label class="label">Sentence length audit (variety notes)</label>
+              <textarea class="textarea" id="s9-cadence" placeholder="Note sections where 3-sentence cadence recurs. Replace one of each triplet with a long sentence + a fragment." style="min-height:80px;"></textarea>
+            </div>
+            <div class="field">
+              <label class="label">AI-pattern scan (any banned phrases still present?)</label>
+              <textarea class="textarea" id="s9-patterns" placeholder="Search for: delve, unlock, game changer, seamless, in conclusion, לצלול, הסיבה לכך פשוטה, em dashes (—)." style="min-height:80px;"></textarea>
+            </div>
+            <div class="field">
+              <label class="label">Final voice / tone check (does it sound human?)</label>
+              <textarea class="textarea" id="s9-tone" placeholder="Read aloud. Note any robotic transitions." style="min-height:80px;"></textarea>
+            </div>
+            <div class="field">
+              <label class="label">Consolidated humanization notes (markdown)</label>
+              <textarea class="textarea mono" id="s9-output" style="min-height:100px;"></textarea>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" data-prev="stage8">← Stage 8</button>
+            <button class="btn primary" data-next="final">Bundle & Deliver →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Final Bundle -->
+      <section class="stage-section hidden" data-section="final">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">★ Final Bundle</h1>
+              <p class="panel-subtitle">Everything stitched into one publish-ready package.</p>
+            </div>
+            <div class="panel-actions">
+              <button class="btn ghost small" id="btn-bundle-copy">📋 Copy all</button>
+              <button class="btn ghost small" id="btn-bundle-download">⬇ Download .md</button>
+            </div>
+          </div>
+
+          <div class="help writer">
+            <strong>Below:</strong> full article + meta + image + fact-check + audits, in publishing order.
+            Copy or download. When satisfied, hand off to <strong style="color:var(--checker);">Checker</strong> to verify and fix.
+          </div>
+
+          <div class="form-grid cols-1" style="margin-top:14px;">
+            <div class="field">
+              <label class="label">Publish-ready bundle</label>
+              <textarea class="textarea mono tall" id="final-bundle" style="min-height:480px;"></textarea>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" data-prev="stage9">← Stage 9</button>
+            <button class="btn writer" id="btn-handoff">Hand off to Checker →</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- CHECKER VIEW -->
+  <div class="main hidden" id="checker-view">
+    <aside class="sidebar" id="checker-sidebar">
+      <div class="nav-section-title">Checker</div>
+      <button class="nav-item" data-cstage="cinput">
+        <span class="stage-num">i</span>
+        <span class="nav-label">Input</span>
+      </button>
+      <button class="nav-item" data-cstage="c1">
+        <span class="stage-num">1</span>
+        <span class="nav-label">Assumptions</span>
+      </button>
+      <button class="nav-item" data-cstage="c2">
+        <span class="stage-num">2</span>
+        <span class="nav-label">Overall Assessment</span>
+      </button>
+      <button class="nav-item" data-cstage="c3">
+        <span class="stage-num">3</span>
+        <span class="nav-label">Strengths</span>
+      </button>
+      <button class="nav-item" data-cstage="c4">
+        <span class="stage-num">4</span>
+        <span class="nav-label">Required Fixes</span>
+      </button>
+      <button class="nav-item" data-cstage="c5">
+        <span class="stage-num">5</span>
+        <span class="nav-label">Suggestions</span>
+      </button>
+      <button class="nav-item" data-cstage="c6">
+        <span class="stage-num">6</span>
+        <span class="nav-label">To Verify</span>
+      </button>
+      <button class="nav-item" data-cstage="c7">
+        <span class="stage-num">7</span>
+        <span class="nav-label">Edited Version</span>
+      </button>
+
+      <div class="nav-section-title">Tools</div>
+      <button class="nav-item" id="btn-checker-export">
+        <span class="stage-num">↧</span>
+        <span class="nav-label">Export review</span>
+      </button>
+      <button class="nav-item" id="btn-checker-clear">
+        <span class="stage-num">↺</span>
+        <span class="nav-label">Reset checker</span>
+      </button>
+    </aside>
+
+    <main class="content" id="checker-content">
+      <!-- Input -->
+      <section class="cstage-section" data-csection="cinput">
+        <div class="intake-banner">
+          <h2>🔍 Content Checker</h2>
+          <p>Paste the text + optional task card. The checker preserves voice while surfacing every issue with a concrete fix.</p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h1 class="panel-title">Input</h1>
+              <p class="panel-subtitle">The text to review. Optional task card overrides defaults.</p>
+            </div>
+            <div class="panel-actions">
+              <button class="btn ghost small" id="btn-detect-lang">🌐 Detect language</button>
+            </div>
+          </div>
+
+          <div class="form-grid cols-1">
+            <div class="field">
+              <label class="label">Task card (optional — overrides defaults)</label>
+              <textarea class="textarea" id="ci-taskcard" placeholder="e.g. Target audience: first-time homebuyers. Goal: 1,500 words. Banned terms: ... Must keep: brand name XYZ. Goal keyword: mortgage refinance." style="min-height:90px;"></textarea>
+            </div>
+            <div class="field">
+              <label class="label">Text to check</label>
+              <textarea class="textarea mono tall" id="ci-text" placeholder="Paste the full article here…"></textarea>
+              <div id="ci-text-stats" style="font-size:12px; color:var(--text-faint); margin-top:6px;">Words: 0 · Characters: 0</div>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label class="label">Goal / platform</label>
+                <input class="input" id="ci-goal" placeholder="e.g. SEO blog post for US market" />
+              </div>
+              <div class="field">
+                <label class="label">Target audience</label>
+                <input class="input" id="ci-audience" placeholder="e.g. homeowners 30–45" />
+              </div>
+              <div class="field">
+                <label class="label">Target language (if translation)</label>
+                <input class="input" id="ci-lang" placeholder="leave blank = same as input" />
+              </div>
+              <div class="field">
+                <label class="label">Edited version requested?</label>
+                <select class="select" id="ci-edited">
+                  <option value="no">No — analysis only</option>
+                  <option value="yes">Yes — include publish-ready rewrite</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="help checker">
+            <strong>Checker priority order:</strong>
+            factual errors &gt; logical failures &gt; structural issues &gt; clarity &gt; stylistic polish.
+            For RTL languages (Hebrew, Arabic) the checker audits direction, mixed numbers and punctuation placement.
+          </div>
+
+          <div class="btn-row">
+            <button class="btn checker" id="btn-start-checking">Start Review →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Assumptions -->
+      <section class="cstage-section hidden" data-csection="c1">
+        <div class="panel checker-section">
+          <div class="panel-header">
+            <div><h1 class="panel-title">1 · Assumptions</h1><p class="panel-subtitle">Only if no task card was attached.</p></div>
+            <div class="panel-actions"><button class="btn ghost small" data-ccopy="c1-output">📋 Copy</button></div>
+          </div>
+          <textarea class="textarea mono" id="c1-output" style="min-height:160px;"></textarea>
+          <div class="btn-row">
+            <button class="btn" data-cprev="cinput">← Input</button>
+            <button class="btn checker" data-cnext="c2">Overall →</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="cstage-section hidden" data-csection="c2">
+        <div class="panel checker-section">
+          <div class="panel-header">
+            <div><h1 class="panel-title">2 · Overall Assessment</h1><p class="panel-subtitle">2–3 sentences. Publication readiness verdict.</p></div>
+            <div class="panel-actions"><button class="btn ghost small" data-ccopy="c2-output">📋 Copy</button></div>
+          </div>
+          <textarea class="textarea" id="c2-output" style="min-height:120px;"></textarea>
+          <div class="btn-row">
+            <button class="btn" data-cprev="c1">← Assumptions</button>
+            <button class="btn checker" data-cnext="c3">Strengths →</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="cstage-section hidden" data-csection="c3">
+        <div class="panel checker-section">
+          <div class="panel-header">
+            <div><h1 class="panel-title">3 · Strengths</h1><p class="panel-subtitle">What already works. Be specific.</p></div>
+            <div class="panel-actions"><button class="btn ghost small" data-ccopy="c3-output">📋 Copy</button></div>
+          </div>
+          <textarea class="textarea" id="c3-output" placeholder="- …&#10;- …&#10;- …" style="min-height:160px;"></textarea>
+          <div class="btn-row">
+            <button class="btn" data-cprev="c2">← Assessment</button>
+            <button class="btn checker" data-cnext="c4">Required Fixes →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Required fixes -->
+      <section class="cstage-section hidden" data-csection="c4">
+        <div class="panel checker-section">
+          <div class="panel-header">
+            <div><h1 class="panel-title">4 · Required Fixes</h1><p class="panel-subtitle">Priority order. Original vs. suggested for each fix, with a reason.</p></div>
+            <div class="panel-actions">
+              <button class="btn ghost small" id="btn-fix-add">+ Add fix</button>
+              <button class="btn ghost small" data-ccopy="c4-output">📋 Copy</button>
+            </div>
+          </div>
+
+          <div id="fix-list"></div>
+
+          <div class="form-grid cols-1" style="margin-top:14px;">
+            <div class="field">
+              <label class="label">Consolidated fixes (markdown — copy this)</label>
+              <textarea class="textarea mono" id="c4-output" style="min-height:200px;"></textarea>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" data-cprev="c3">← Strengths</button>
+            <button class="btn checker" data-cnext="c5">Suggestions →</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="cstage-section hidden" data-csection="c5">
+        <div class="panel checker-section">
+          <div class="panel-header">
+            <div><h1 class="panel-title">5 · Suggestions for Improvement</h1><p class="panel-subtitle">Optional polish. Style, voice, tone, SEO niceties.</p></div>
+            <div class="panel-actions"><button class="btn ghost small" data-ccopy="c5-output">📋 Copy</button></div>
+          </div>
+          <textarea class="textarea" id="c5-output" placeholder="- …&#10;- …&#10;- …" style="min-height:160px;"></textarea>
+          <div class="btn-row">
+            <button class="btn" data-cprev="c4">← Required Fixes</button>
+            <button class="btn checker" data-cnext="c6">To Verify →</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="cstage-section hidden" data-csection="c6">
+        <div class="panel checker-section">
+          <div class="panel-header">
+            <div><h1 class="panel-title">6 · Items to Verify</h1><p class="panel-subtitle">Facts that can't be confirmed, missing data, suspicious claims.</p></div>
+            <div class="panel-actions"><button class="btn ghost small" data-ccopy="c6-output">📋 Copy</button></div>
+          </div>
+          <textarea class="textarea" id="c6-output" placeholder="- …&#10;- …" style="min-height:140px;"></textarea>
+          <div class="btn-row">
+            <button class="btn" data-cprev="c5">← Suggestions</button>
+            <button class="btn checker" data-cnext="c7">Edited →</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="cstage-section hidden" data-csection="c7">
+        <div class="panel checker-section">
+          <div class="panel-header">
+            <div><h1 class="panel-title">7 · Edited Version <span style="font-size:12px; color:var(--text-faint); font-weight:500;">(only if requested)</span></h1><p class="panel-subtitle">Publish-ready rewrite with all required fixes applied.</p></div>
+            <div class="panel-actions">
+              <button class="btn ghost small" id="btn-edited-copy">📋 Copy</button>
+              <button class="btn ghost small" id="btn-edited-download">⬇ Download .md</button>
+            </div>
+          </div>
+          <textarea class="textarea mono tall" id="c7-output" placeholder="(paste the edited, publish-ready version here)" style="min-height:320px;"></textarea>
+          <div class="btn-row">
+            <button class="btn" data-cprev="c6">← To Verify</button>
+            <button class="btn checker" id="btn-copy-full-review">📦 Copy full review</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h2 id="modal-title">Title</h2>
+    <p id="modal-body">Body</p>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">Copied</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="file-import" accept="application/json" style="display:none;" />
+
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+const STORAGE_KEY = 'seo-geo-tool-v1';
+const state = {
+  mode: 'writer',
+  writer: {
+    intake: { topic: '', language: '', market: '', audience: '', brand: '', wordcount: 1800, contenttype: 'How-to guide', notes: '' },
+    stages: {
+      stage1: { status: 'pending', urls: '', keywords: '', gaps: '', notes: '', output: '' },
+      stage2: { status: 'pending', prompts: '', entities: '', output: '' },
+      stage3: { status: 'pending', h1: '', title: '', outline: '', faq: '', output: '' },
+      stage4: { status: 'pending', article: '', assumptions: '', output: '' },
+      stage5: { status: 'pending', ta: '', tb: '', tc: '', da: '', db: '', dc: '', slug: '', output: '' },
+      stage6: { status: 'pending', prompt: '', alt: '', filename: '', style: 'Realistic editorial photography', mood: '', output: '' },
+      stage7: { status: 'pending', table: '', sources: '', output: '' },
+      stage8: { status: 'pending', uniqueness: '', math: '', output: '' },
+      stage9: { status: 'pending', cadence: '', patterns: '', tone: '', output: '' }
+    },
+    final: '',
+    currentStage: 'intake'
+  },
+  checker: {
+    input: { taskcard: '', text: '', goal: '', audience: '', lang: '', edited: 'no' },
+    sections: { c1:'', c2:'', c3:'', c4:'', c5:'', c6:'', c7:'' },
+    fixes: [],
+    currentStage: 'cinput'
+  },
+  theme: 'light'
+};
+
+/* ============================================================
+   PERSISTENCE
+   ============================================================ */
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.mode) state.mode = data.mode;
+    if (data.theme) state.theme = data.theme;
+    if (data.writer) {
+      if (data.writer.intake) Object.assign(state.writer.intake, data.writer.intake);
+      if (data.writer.stages) {
+        for (const k of Object.keys(state.writer.stages)) {
+          if (data.writer.stages[k]) Object.assign(state.writer.stages[k], data.writer.stages[k]);
+        }
+      }
+      if (typeof data.writer.final === 'string') state.writer.final = data.writer.final;
+      if (data.writer.currentStage) state.writer.currentStage = data.writer.currentStage;
+    }
+    if (data.checker) {
+      if (data.checker.input) Object.assign(state.checker.input, data.checker.input);
+      if (data.checker.sections) Object.assign(state.checker.sections, data.checker.sections);
+      if (Array.isArray(data.checker.fixes)) state.checker.fixes = data.checker.fixes;
+      if (data.checker.currentStage) state.checker.currentStage = data.checker.currentStage;
+    }
+  } catch (e) {}
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+function $(id) { return document.getElementById(id); }
+function $$(sel, root=document) { return Array.from(root.querySelectorAll(sel)); }
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 1600);
+}
+function openModal(title, body, actions) {
+  $('modal-title').textContent = title;
+  $('modal-body').textContent = body;
+  const a = $('modal-actions');
+  a.innerHTML = '';
+  actions.forEach(act => {
+    const b = document.createElement('button');
+    b.className = 'btn ' + (act.cls || '');
+    b.textContent = act.label;
+    b.onclick = () => { act.onClick(); closeModal(); };
+    a.appendChild(b);
+  });
+  $('modal').classList.add('open');
+}
+function closeModal() { $('modal').classList.remove('open'); }
+$('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+
+function copyText(text) {
+  if (!text) { toast('Nothing to copy'); return; }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => toast('Copied to clipboard'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); toast('Copied to clipboard'); }
+    catch (e) { toast('Copy failed'); }
+    ta.remove();
+  }
+}
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+  toast('Downloaded');
+}
+function wordCount(s) {
+  if (!s) return 0;
+  return s.trim().split(/\s+/).filter(Boolean).length;
+}
+function escapeHtml(s) {
+  return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ============================================================
+   MODE SWITCHING
+   ============================================================ */
+function setMode(mode) {
+  state.mode = mode;
+  $$('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  $('writer-view').classList.toggle('hidden', mode !== 'writer');
+  $('checker-view').classList.toggle('hidden', mode !== 'checker');
+  save();
+}
+$$('.mode-btn').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+/* ============================================================
+   THEME
+   ============================================================ */
+function applyTheme(t) {
+  state.theme = t;
+  document.documentElement.setAttribute('data-theme', t);
+  save();
+}
+$('btn-theme').addEventListener('click', () => applyTheme(state.theme === 'dark' ? 'light' : 'dark'));
+
+/* ============================================================
+   WRITER NAVIGATION
+   ============================================================ */
+function showStage(stageId) {
+  state.writer.currentStage = stageId;
+  $$('.stage-section').forEach(s => s.classList.toggle('hidden', s.dataset.section !== stageId));
+  $$('#writer-sidebar .nav-item').forEach(b => b.classList.toggle('active', b.dataset.stage === stageId));
+  // scroll content to top
+  $('writer-content').scrollTop = 0;
+  save();
+}
+$$('#writer-sidebar .nav-item').forEach(b => {
+  b.addEventListener('click', () => showStage(b.dataset.stage));
+});
+
+/* ============================================================
+   INTAKE BINDINGS
+   ============================================================ */
+function bindIntake() {
+  const fields = ['topic','language','market','audience','brand','wordcount','contenttype','notes'];
+  fields.forEach(f => {
+    const el = $(f);
+    el.value = state.writer.intake[f];
+    el.addEventListener('input', () => {
+      state.writer.intake[f] = (f === 'wordcount') ? (parseInt(el.value,10) || 0) : el.value;
+      save();
+    });
+  });
+  $('btn-start-writing').addEventListener('click', () => {
+    const t = state.writer.intake.topic.trim();
+    const lang = state.writer.intake.language;
+    const mkt = state.writer.intake.market.trim();
+    if (!t || !lang || !mkt) {
+      openModal('Missing required fields',
+        'Topic, language and market are required to start writing.',
+        [{ label: 'OK', cls: 'primary', onClick: () => {} }]);
+      return;
+    }
+    showStage('stage1');
+  });
+}
+
+/* ============================================================
+   STAGE BINDINGS (writer)
+   ============================================================ */
+const stageFieldMap = {
+  stage1: ['urls','keywords','gaps','notes','output'],
+  stage2: ['prompts','entities','output'],
+  stage3: ['h1','title','outline','faq','output'],
+  stage4: ['article','assumptions'],
+  stage5: ['ta','tb','tc','da','db','dc','slug','output'],
+  stage6: ['prompt','alt','filename','style','mood','output'],
+  stage7: ['table','sources','output'],
+  stage8: ['uniqueness','math','output'],
+  stage9: ['cadence','patterns','tone','output']
+};
+function bindStages() {
+  for (const [stage, fields] of Object.entries(stageFieldMap)) {
+    fields.forEach(f => {
+      const id = 's' + stage.replace('stage','') + '-' + f;
+      const el = $(id);
+      if (!el) return;
+      el.value = state.writer.stages[stage][f] || '';
+      el.addEventListener('input', () => {
+        state.writer.stages[stage][f] = el.value;
+        save();
+        updateStageStatus(stage);
+        maybeBuildBundle();
+      });
+    });
+    const sel = $('status-' + stage + '-select');
+    sel.value = state.writer.stages[stage].status;
+    sel.addEventListener('change', () => {
+      state.writer.stages[stage].status = sel.value;
+      updateStageStatus(stage);
+      save();
+    });
+  }
+  // Stage nav buttons
+  $$('[data-next]').forEach(b => b.addEventListener('click', () => showStage(b.dataset.next)));
+  $$('[data-prev]').forEach(b => b.addEventListener('click', () => showStage(b.dataset.prev)));
+
+  // Copy buttons
+  $$('[data-copy-target]').forEach(b => {
+    b.addEventListener('click', () => {
+      const t = $(b.dataset.copyTarget)?.value || '';
+      copyText(t);
+    });
+  });
+
+  // Word count check (stage 4)
+  $('btn-wordcount-check').addEventListener('click', () => {
+    updateStage4Stats();
+  });
+  $('s4-article').addEventListener('input', updateStage4Stats);
+
+  // Bundle actions
+  $('btn-bundle-copy').addEventListener('click', () => copyText($('final-bundle').value));
+  $('btn-bundle-download').addEventListener('click', () => {
+    const topicSlug = (state.writer.intake.topic || 'article').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60);
+    downloadText(topicSlug + '.md', $('final-bundle').value);
+  });
+
+  // Handoff
+  $('btn-handoff').addEventListener('click', handoffToChecker);
+
+  // Meta length counters
+  ['ta','tb','tc','da','db','dc'].forEach(f => {
+    const el = $('s5-' + f);
+    const out = $('s5-' + f + '-len');
+    const update = () => {
+      const v = el.value || '';
+      const len = [...v].length; // chars (handles Hebrew multi-byte)
+      out.textContent = ` · ${len} chars`;
+      out.style.color = (f.startsWith('t') ? (len >= 50 && len <= 60) : (len >= 140 && len <= 155)) ? 'var(--success)' : 'var(--text-faint)';
+    };
+    el.addEventListener('input', update);
+    update();
+  });
+}
+function updateStage4Stats() {
+  const t = $('s4-article').value;
+  $('s4-wordcount').textContent = `Words: ${wordCount(t)} · Characters: ${[...t].length}`;
+}
+
+function updateStageStatus(stage) {
+  const s = state.writer.stages[stage];
+  // Auto-detect status if still pending and content exists
+  if (s.status === 'pending') {
+    const has = Object.entries(s).some(([k,v]) => k !== 'status' && typeof v === 'string' && v.trim().length > 20);
+    if (has) {
+      s.status = 'in-progress';
+      $('status-' + stage + '-select').value = 'in-progress';
+    }
+  }
+  // Reflect on sidebar
+  const navItem = document.querySelector(`#writer-sidebar [data-stage="${stage}"]`);
+  if (!navItem) return;
+  navItem.classList.toggle('done', s.status === 'done');
+  const badge = $('status-' + stage);
+  if (badge) {
+    const map = { pending: '○', 'in-progress': '◐', done: '✓' };
+    badge.textContent = map[s.status] || '';
+  }
+}
+
+/* ============================================================
+   BUNDLE BUILDER
+   ============================================================ */
+function maybeBuildBundle() {
+  const f = state.writer.final;
+  const cur = $('final-bundle').value;
+  if (f && cur === '') {
+    $('final-bundle').value = f;
+  }
+}
+function buildBundle() {
+  const i = state.writer.intake;
+  const s = state.writer.stages;
+  const parts = [];
+
+  parts.push(`# ${s.stage3.h1 || i.topic}`);
+  if (s.stage3.title && s.stage3.title !== s.stage3.h1) parts.push(`*Working title: ${s.stage3.title}*`);
+  parts.push('');
+  if (s.stage4.assumptions && s.stage4.assumptions.trim()) {
+    parts.push('## Assumptions');
+    parts.push(s.stage4.assumptions.trim());
+    parts.push('');
+  }
+  if (s.stage4.article) {
+    parts.push(s.stage4.article.trim());
+    parts.push('');
+  }
+
+  // Meta
+  parts.push('---');
+  parts.push('');
+  parts.push('## Meta Package');
+  const titles = [s.stage5.ta, s.stage5.tb, s.stage5.tc].filter(Boolean);
+  const descs = [s.stage5.da, s.stage5.db, s.stage5.dc].filter(Boolean);
+  if (titles.length) {
+    parts.push('**Meta Title Options**');
+    parts.push(`1. ${s.stage5.ta}` + (s.stage5.tc === s.stage5.tc && titles[2] ? ' *(recommended)*' : ''));
+    if (s.stage5.tb) parts.push(`2. ${s.stage5.tb}`);
+    if (s.stage5.tc) parts.push(`3. ${s.stage5.tc} *(recommended)*`);
+    parts.push('');
+  }
+  if (descs.length) {
+    parts.push('**Meta Description Options**');
+    if (s.stage5.da) parts.push(`1. ${s.stage5.da}`);
+    if (s.stage5.db) parts.push(`2. ${s.stage5.db}`);
+    if (s.stage5.dc) parts.push(`3. ${s.stage5.dc} *(recommended)*`);
+    parts.push('');
+  }
+  if (s.stage5.slug) {
+    parts.push(`**URL slug:** /${s.stage5.slug}`);
+    parts.push('');
+  }
+
+  // Image
+  if (s.stage6.prompt || s.stage6.alt) {
+    parts.push('## Featured Image');
+    if (s.stage6.prompt) { parts.push('**Prompt:**'); parts.push('> ' + s.stage6.prompt.trim().split('\n').join('\n> ')); parts.push(''); }
+    if (s.stage6.style) parts.push(`**Style:** ${s.stage6.style}`);
+    if (s.stage6.mood) parts.push(`**Mood / lighting:** ${s.stage6.mood}`);
+    if (s.stage6.alt) parts.push(`**Alt text:** ${s.stage6.alt}`);
+    if (s.stage6.filename) parts.push(`**Filename:** ${s.stage6.filename}`);
+    parts.push('');
+  }
+
+  // Fact check
+  if (s.stage7.table || s.stage7.sources) {
+    parts.push('## Fact Check & Sources');
+    if (s.stage7.table) parts.push(s.stage7.table.trim());
+    if (s.stage7.sources) { parts.push(''); parts.push('### Sources'); parts.push(s.stage7.sources.trim()); }
+    parts.push('');
+  }
+
+  // Audits
+  const aud = [];
+  if (s.stage8.uniqueness) aud.push(`**Uniqueness:** ${s.stage8.uniqueness.trim()}`);
+  if (s.stage8.math) aud.push(`**Math/Empirical Audit:**\n${s.stage8.math.trim()}`);
+  if (s.stage9.cadence) aud.push(`**Cadence:** ${s.stage9.cadence.trim()}`);
+  if (s.stage9.patterns) aud.push(`**Pattern Scan:** ${s.stage9.patterns.trim()}`);
+  if (s.stage9.tone) aud.push(`**Tone Check:** ${s.stage9.tone.trim()}`);
+  if (aud.length) {
+    parts.push('## Audits');
+    parts.push(...aud);
+    parts.push('');
+  }
+
+  return parts.join('\n');
+}
+
+/* ============================================================
+   HANDOFF WRITER → CHECKER
+   ============================================================ */
+function handoffToChecker() {
+  // Build bundle and stash as prefilled checker text
+  const bundle = buildBundle();
+  state.writer.final = bundle;
+  $('final-bundle').value = bundle;
+  save();
+
+  openModal(
+    'Hand off to Checker?',
+    'Send the article + meta + image to the Checker. You can keep editing here too — the snapshot is taken now.',
+    [
+      { label: 'Cancel', cls: 'ghost', onClick: () => {} },
+      { label: 'Hand off →', cls: 'checker primary', onClick: () => {
+          state.checker.input.text = bundle;
+          $('ci-text').value = bundle;
+          updateCheckerStats();
+          // Quick meta-detection: language from intake
+          if (state.writer.intake.language && !$('ci-lang').value) {
+            $('ci-lang').value = state.writer.intake.language;
+            state.checker.input.lang = state.writer.intake.language;
+          }
+          if (state.writer.intake.audience && !$('ci-audience').value) {
+            $('ci-audience').value = state.writer.intake.audience;
+            state.checker.input.audience = state.writer.intake.audience;
+          }
+          save();
+          setMode('checker');
+          showCheckerStage('cinput');
+        }
+      }
+    ]
+  );
+}
+
+/* ============================================================
+   CHECKER NAVIGATION
+   ============================================================ */
+function showCheckerStage(stageId) {
+  state.checker.currentStage = stageId;
+  $$('.cstage-section').forEach(s => s.classList.toggle('hidden', s.dataset.csection !== stageId));
+  $$('#checker-sidebar .nav-item').forEach(b => {
+    if (!b.dataset.cstage) return;
+    b.classList.toggle('active', b.dataset.cstage === stageId);
+  });
+  $('checker-content').scrollTop = 0;
+  save();
+}
+$$('#checker-sidebar .nav-item').forEach(b => {
+  if (!b.dataset.cstage) return;
+  b.addEventListener('click', () => showCheckerStage(b.dataset.cstage));
+});
+
+/* ============================================================
+   CHECKER BINDINGS
+   ============================================================ */
+function bindChecker() {
+  const inputs = ['taskcard','text','goal','audience','lang','edited'];
+  inputs.forEach(f => {
+    const id = 'ci-' + f;
+    const el = $(id);
+    el.value = state.checker.input[f] || '';
+    el.addEventListener('input', () => {
+      state.checker.input[f] = el.value;
+      save();
+      if (f === 'text') updateCheckerStats();
+    });
+  });
+
+  // Section outputs
+  ['c1','c2','c3','c4','c5','c6','c7'].forEach(s => {
+    const el = $('s'.replace('s','') + s + '-output') || $(s + '-output');
+    if (!el) return;
+    el.value = state.checker.sections[s] || '';
+    el.addEventListener('input', () => {
+      state.checker.sections[s] = el.value;
+      save();
+    });
+  });
+
+  // Nav buttons
+  $$('[data-cnext]').forEach(b => b.addEventListener('click', () => showCheckerStage(b.dataset.cnext)));
+  $$('[data-cprev]').forEach(b => b.addEventListener('click', () => showCheckerStage(b.dataset.cprev)));
+  $$('[data-ccopy]').forEach(b => b.addEventListener('click', () => {
+    copyText($(b.dataset.ccopy).value);
+  }));
+
+  // Detect language (heuristic)
+  $('btn-detect-lang').addEventListener('click', () => {
+    const t = state.checker.input.text || '';
+    const he = (t.match(/[\u0590-\u05FF]/g) || []).length;
+    const ar = (t.match(/[\u0600-\u06FF]/g) || []).length;
+    const cyr = (t.match(/[\u0400-\u04FF]/g) || []).length;
+    let guess = 'English';
+    if (he > ar && he > 20) guess = 'Hebrew';
+    else if (ar > 20) guess = 'Arabic';
+    else if (cyr > 20) guess = 'Cyrillic family';
+    $('ci-lang').value = guess;
+    state.checker.input.lang = guess;
+    save();
+    toast(`Detected: ${guess}`);
+  });
+
+  $('btn-start-checking').addEventListener('click', () => {
+    if (!state.checker.input.text.trim()) {
+      openModal('No text to check', 'Paste the article in the input first.',
+        [{ label: 'OK', cls: 'primary', onClick: () => {} }]);
+      return;
+    }
+    showCheckerStage('c1');
+    toast('Checker ready — fill sections in order');
+  });
+
+  // Fixes
+  $('btn-fix-add').addEventListener('click', () => addFix());
+  renderFixes();
+
+  // Edited version actions
+  $('btn-edited-copy').addEventListener('click', () => copyText($('c7-output').value));
+  $('btn-edited-download').addEventListener('click', () => {
+    const slug = state.writer.intake.topic ?
+      state.writer.intake.topic.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60) :
+      'edited-article';
+    downloadText(slug + '-edited.md', $('c7-output').value);
+  });
+
+  // Full review
+  $('btn-copy-full-review').addEventListener('click', () => {
+    const s = state.checker.sections;
+    const lines = [];
+    lines.push('# Content Review');
+    lines.push('');
+    if (state.checker.input.goal) lines.push(`**Goal:** ${state.checker.input.goal}`);
+    if (state.checker.input.audience) lines.push(`**Audience:** ${state.checker.input.audience}`);
+    if (state.checker.input.lang) lines.push(`**Language:** ${state.checker.input.lang}`);
+    lines.push('');
+    if (s.c1) { lines.push('## 1. Assumptions'); lines.push(s.c1); lines.push(''); }
+    if (s.c2) { lines.push('## 2. Overall Assessment'); lines.push(s.c2); lines.push(''); }
+    if (s.c3) { lines.push('## 3. Strengths'); lines.push(s.c3); lines.push(''); }
+    if (s.c4) { lines.push('## 4. Required Fixes'); lines.push(s.c4); lines.push(''); }
+    if (s.c5) { lines.push('## 5. Suggestions'); lines.push(s.c5); lines.push(''); }
+    if (s.c6) { lines.push('## 6. To Verify'); lines.push(s.c6); lines.push(''); }
+    if (s.c7 && state.checker.input.edited === 'yes') { lines.push('## 7. Edited Version'); lines.push(s.c7); lines.push(''); }
+    copyText(lines.join('\n'));
+  });
+
+  // Export review (full markdown)
+  $('btn-checker-export').addEventListener('click', () => {
+    const s = state.checker.sections;
+    const lines = [];
+    lines.push('# Content Review');
+    lines.push('');
+    lines.push('**Text reviewed:**');
+    lines.push('```');
+    lines.push(state.checker.input.text);
+    lines.push('```');
+    lines.push('');
+    if (s.c1) { lines.push('## 1. Assumptions'); lines.push(s.c1); lines.push(''); }
+    if (s.c2) { lines.push('## 2. Overall Assessment'); lines.push(s.c2); lines.push(''); }
+    if (s.c3) { lines.push('## 3. Strengths'); lines.push(s.c3); lines.push(''); }
+    if (s.c4) { lines.push('## 4. Required Fixes'); lines.push(s.c4); lines.push(''); }
+    if (s.c5) { lines.push('## 5. Suggestions'); lines.push(s.c5); lines.push(''); }
+    if (s.c6) { lines.push('## 6. To Verify'); lines.push(s.c6); lines.push(''); }
+    if (s.c7 && state.checker.input.edited === 'yes') { lines.push('## 7. Edited Version'); lines.push(s.c7); lines.push(''); }
+    const slug = state.writer.intake.topic ?
+      state.writer.intake.topic.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60) :
+      'content-review';
+    downloadText(slug + '-review.md', lines.join('\n'));
+  });
+
+  // Reset checker
+  $('btn-checker-clear').addEventListener('click', () => {
+    openModal('Reset checker?', 'All review notes will be cleared. The text stays until you clear it manually.',
+      [
+        { label: 'Cancel', cls: 'ghost', onClick: () => {} },
+        { label: 'Reset', cls: 'primary', onClick: () => {
+            state.checker.sections = { c1:'', c2:'', c3:'', c4:'', c5:'', c6:'', c7:'' };
+            state.checker.fixes = [];
+            for (const s of ['c1','c2','c3','c4','c5','c6','c7']) {
+              const el = $(s + '-output'); if (el) el.value = '';
+            }
+            renderFixes();
+            save();
+            toast('Checker reset');
+          }
+        }
+      ]);
+  });
+
+  updateCheckerStats();
+}
+function updateCheckerStats() {
+  const t = state.checker.input.text || '';
+  $('ci-text-stats').textContent = `Words: ${wordCount(t)} · Characters: ${[...t].length}`;
+}
+
+/* ============================================================
+   FIXES (checker)
+   ============================================================ */
+function addFix(fix) {
+  fix = fix || { priority: 4, original: '', suggested: '', reason: '' };
+  state.checker.fixes.push(fix);
+  renderFixes();
+  save();
+}
+function renderFixes() {
+  const list = $('fix-list');
+  list.innerHTML = '';
+  if (!state.checker.fixes.length) {
+    list.innerHTML = '<div class="empty" style="padding:18px;"><p>No fixes yet. Add the first one to start.</p></div>';
+    return;
+  }
+  state.checker.fixes.forEach((f, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'fix-block';
+    wrap.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <span class="priority-tag p${f.priority || 4}">P${f.priority || 4}</span>
+        <strong style="font-size:13px;">Fix #${i+1}</strong>
+        <span style="flex:1;"></span>
+        <button class="btn ghost small" data-rm-fix="${i}">Remove</button>
+      </div>
+      <div class="form-grid cols-1">
+        <div class="field">
+          <label class="label">Priority (1 = factual error, 5 = stylistic)</label>
+          <select class="select" data-fix-prio="${i}">
+            <option value="1" ${f.priority==1?'selected':''}>P1 — Factual / misleading</option>
+            <option value="2" ${f.priority==2?'selected':''}>P2 — Logic / contradiction / gap</option>
+            <option value="3" ${f.priority==3?'selected':''}>P3 — Structure / audience fit</option>
+            <option value="4" ${f.priority==4?'selected':''}>P4 — Clarity / readability</option>
+            <option value="5" ${f.priority==5?'selected':''}>P5 — Stylistic polish</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label">Original phrasing</label>
+          <textarea class="textarea fix-original" data-fix-orig="${i}" placeholder="Paste the exact text from the article…" style="min-height:60px;"></textarea>
+        </div>
+        <div class="field">
+          <label class="label">Suggested phrasing</label>
+          <textarea class="textarea fix-suggested" data-fix-sug="${i}" placeholder="The replacement…" style="min-height:60px;"></textarea>
+        </div>
+        <div class="field">
+          <label class="label">Why this fix</label>
+          <textarea class="textarea" data-fix-why="${i}" placeholder="One short sentence explaining the reasoning." style="min-height:50px;"></textarea>
+        </div>
+      </div>
+    `;
+    list.appendChild(wrap);
+    wrap.querySelector(`[data-fix-prio="${i}"]`).value = f.priority || 4;
+    wrap.querySelector(`[data-fix-orig="${i}"]`).value = f.original || '';
+    wrap.querySelector(`[data-fix-sug="${i}"]`).value = f.suggested || '';
+    wrap.querySelector(`[data-fix-why="${i}"]`).value = f.reason || '';
+  });
+  // Bind events
+  list.querySelectorAll('[data-rm-fix]').forEach(b => b.addEventListener('click', e => {
+    const i = parseInt(e.currentTarget.dataset.rmFix, 10);
+    state.checker.fixes.splice(i, 1);
+    renderFixes();
+    save();
+  }));
+  list.querySelectorAll('[data-fix-prio]').forEach(b => b.addEventListener('change', e => {
+    const i = parseInt(e.currentTarget.dataset.fixPrio, 10);
+    state.checker.fixes[i].priority = parseInt(e.currentTarget.value, 10);
+    save();
+    rebuildFixOutput();
+  }));
+  list.querySelectorAll('[data-fix-orig]').forEach(b => b.addEventListener('input', e => {
+    const i = parseInt(e.currentTarget.dataset.fixOrig, 10);
+    state.checker.fixes[i].original = e.currentTarget.value;
+    save();
+    rebuildFixOutput();
+  }));
+  list.querySelectorAll('[data-fix-sug]').forEach(b => b.addEventListener('input', e => {
+    const i = parseInt(e.currentTarget.dataset.fixSug, 10);
+    state.checker.fixes[i].suggested = e.currentTarget.value;
+    save();
+    rebuildFixOutput();
+  }));
+  list.querySelectorAll('[data-fix-why]').forEach(b => b.addEventListener('input', e => {
+    const i = parseInt(e.currentTarget.dataset.fixWhy, 10);
+    state.checker.fixes[i].reason = e.currentTarget.value;
+    save();
+    rebuildFixOutput();
+  }));
+  rebuildFixOutput();
+}
+function rebuildFixOutput() {
+  const lines = [];
+  state.checker.fixes.forEach((f, i) => {
+    const p = f.priority || 4;
+    const labels = { 1: 'Factual / misleading', 2: 'Logic / contradiction', 3: 'Structure / audience', 4: 'Clarity / readability', 5: 'Stylistic polish' };
+    lines.push(`### Fix #${i+1} — P${p} (${labels[p]})`);
+    if (f.original) { lines.push('**Original:**'); lines.push('> ' + f.original.replace(/\n/g, '\n> ')); }
+    if (f.suggested) { lines.push('**Suggested:**'); lines.push('> ' + f.suggested.replace(/\n/g, '\n> ')); }
+    if (f.reason) { lines.push(`*Why:* ${f.reason}`); }
+    lines.push('');
+  });
+  const out = $('c4-output');
+  if (out) { out.value = lines.join('\n'); state.checker.sections.c4 = out.value; save(); }
+}
+
+/* ============================================================
+   EXPORT / IMPORT
+   ============================================================ */
+$('btn-export').addEventListener('click', () => {
+  const payload = JSON.stringify(state, null, 2);
+  downloadText('seo-geo-project-' + Date.now() + '.json', payload);
+});
+$('btn-import').addEventListener('click', () => $('file-import').click());
+$('file-import').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      Object.assign(state, data);
+      save();
+      hydrate();
+      toast('Imported — reloading view');
+    } catch (err) {
+      openModal('Import failed', 'The file is not valid JSON for this tool.',
+        [{ label: 'OK', cls: 'primary', onClick: () => {} }]);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+$('btn-clear').addEventListener('click', () => {
+  openModal('Reset project?', 'This clears the writer + checker state. Cannot be undone.',
+    [
+      { label: 'Cancel', cls: 'ghost', onClick: () => {} },
+      { label: 'Reset everything', cls: 'primary', onClick: () => {
+          localStorage.removeItem(STORAGE_KEY);
+          location.reload();
+        }
+      }
+    ]);
+});
+
+/* ============================================================
+   HYDRATE (load state into DOM)
+   ============================================================ */
+function hydrate() {
+  applyTheme(state.theme);
+  setMode(state.mode);
+  bindIntake();
+  bindStages();
+  bindChecker();
+  // Sidebar
+  showStage(state.writer.currentStage || 'intake');
+  showCheckerStage(state.checker.currentStage || 'cinput');
+  // Refresh all sidebar statuses
+  Object.keys(state.writer.stages).forEach(updateStageStatus);
+  // Re-render fixes
+  renderFixes();
+  // Bundle
+  if (state.writer.final) {
+    $('final-bundle').value = state.writer.final;
+  }
+  updateStage4Stats();
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+load();
+hydrate();
+</script>
+</body>
+</html>
