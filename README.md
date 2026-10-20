@@ -38,6 +38,7 @@ You can run the AI step directly in the tool without copy-pasting anywhere. Clic
 
 - **OpenAI**: `gpt-4o-mini` (cheap, fast), `gpt-4o`, `gpt-4-turbo`, `o1-mini`
 - **Anthropic**: `claude-3-5-sonnet-latest`, `claude-3-5-haiku-latest`
+- **Google Gemini**: `gemini-1.5-flash`, `gemini-1.5-pro`, `gemini-2.0-flash-exp`
 
 The key is stored only in your browser's localStorage and sent directly to the provider — never through any intermediate server. Click **✨ Generate with AI** and the tool calls the API, parses the response, and fills every field.
 
