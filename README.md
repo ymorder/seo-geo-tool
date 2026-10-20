@@ -1,53 +1,92 @@
 # SEO/GEO Content Tool — Writer + Checker
 
-A single-file browser tool that bundles an SEO/GEO **writer** workflow and a **content checker** review workflow into one interface. Drop `index.html` into any browser, fill in a topic, work through the nine writing stages, then hand the bundle off to the checker for fact-level review.
+A single-file browser tool that bundles an SEO/GEO **writer** workflow and a **content checker** review workflow into one interface. Drop `index.html` into any browser, type the topic + language + market, and start producing a publish-ready article in one shot.
 
 No build step, no backend, no dependencies. State persists in `localStorage`.
 
-## What's inside
+## Writer mode — streamlined flow
 
-### Writer mode (9 stages)
+The writer was designed to start working the moment you enter the basics.
 
-The writer follows a fixed pipeline so each article ships with every SEO/GEO asset:
+1. **Intake** — three required fields: subject, language, market. Advanced inputs (audience, brand, length, content type, notes) are collapsed by default.
+2. **Start** → drops you into the working canvas.
+3. **Generate & Parse** at the top:
+   - **📋 Copy full prompt** generates a comprehensive prompt that asks the AI to do the research, writing, meta tags and image brief in one shot.
+   - **📥 Paste response** lets you paste the AI's reply back. **⤵ Parse & fill fields** distributes the response into the right fields automatically using `=== SECTION ===` delimiters.
+4. **Outputs sit on the canvas as editable panels**, in order of priority:
+   - 📝 **Article** — full publish-ready body (markdown)
+   - 🎯 **Meta Tags** — 3 title options · 3 description options · 1 URL slug · with character counters
+   - 🖼️ **Featured Image** — style · mood · prompt · alt text · filename
+5. **▶ Advanced sections (optional)** — research · GEO prompts · outline · fact check · audits. Open only if you asked the AI for them.
+6. **📦 Final Bundle** — auto-built markdown that stitches article + meta + image + audits. Copy or download `.md`.
+7. **Hand off to Checker →** — preloads the bundle as the text-to-check in Checker mode.
 
-| Stage | Output |
-| --- | --- |
-| Intake | Topic, language, market, audience, brand, word count, content type |
-| 1 | Competitor research · keyword map · content gaps |
-| 2 | GEO prompts (10–15) · quote-ready answers for AI search |
-| 3 | Outline · H1 with primary keyword · H2/H3 · FAQ |
-| 4 | Article body (markdown, live word counter) |
-| 5 | Meta title × 3, meta description × 3, URL slug |
-| 6 | Featured image prompt (16:9, no text/logos) · alt · filename |
-| 7 | Fact check table · clickable source list |
-| 8 | Uniqueness audit · math/empirical audit |
-| 9 | Humanization · AI-pattern scan · tone check |
-| ★ Final Bundle | Everything stitched into one publish-ready markdown |
+The whole working view is a single scrollable canvas — no stage navigation, no manual paste-into-each-field.
 
-Each stage has a status pill (Pending → In progress → Done). Stages flip to "In progress" automatically once you start typing.
+## Checker mode
 
-### Checker mode
+Paste any text and walk through the priority-driven review:
 
-Paste any text and walk through the review in this order (priority-driven):
+1. **Assumptions** — only if no task card was attached
+2. **Overall Assessment** — 2–3 sentences, publication verdict
+3. **Strengths** — what already works
+4. **Required Fixes** — structured builder with priority tags P1–P5, original vs. suggested phrasing, and reason per fix. Consolidated markdown auto-rebuilds.
+5. **Suggestions** — optional polish
+6. **To Verify** — facts that can't be confirmed
+7. **Edited Version** — publish-ready rewrite, only if requested
 
-1. Assumptions
-2. Overall assessment (2–3 sentences)
-3. Strengths
-4. **Required fixes** — structured builder with priority tags P1–P5, original vs. suggested phrasing, and the reason for each fix
-5. Suggestions for improvement
-6. Items to verify
-7. Edited version (publish-ready rewrite, only if requested)
+## Required response format (for the parser)
 
-The "Required fixes" section auto-rebuilds the consolidated markdown as you add or edit fixes, so you can copy one clean block downstream.
+The Parse & fill button expects the AI response in this format:
 
-## Writer → Checker handoff
+```
+=== ARTICLE ===
+[full markdown article]
 
-When the writer finishes stage 9, the **Final Bundle** stitches the article, meta package, image brief, fact-check table and audits into one markdown block. Clicking **Hand off to Checker →** confirms in a modal and preloads the bundle as the text-to-check in Checker mode. The intake language and audience are forwarded so the checker can use them as defaults.
+=== ASSUMPTIONS ===
+[bullet list]
+
+=== META TITLES ===
+1. [title A]
+2. [title B]
+3. [title C — recommended]
+
+=== META DESCRIPTIONS ===
+1. [desc A]
+2. [desc B]
+3. [desc C — recommended]
+
+=== SLUG ===
+[hyphenated-slug]
+
+=== IMAGE STYLE ===
+[Realistic editorial photography | Modern abstract conceptual art | ...]
+
+=== IMAGE MOOD ===
+[mood / lighting]
+
+=== IMAGE PROMPT ===
+[16:9 · no text · no logos]
+
+=== IMAGE ALT ===
+[alt text including primary keyword]
+
+=== IMAGE FILENAME ===
+[hyphenated-filename.jpg]
+
+=== FACT CHECK ===
+[markdown table + source list]
+
+=== AUDITS ===
+[uniqueness · math · humanization]
+```
+
+The comprehensive prompt the **Copy full prompt** button generates asks for this format.
 
 ## Other features
 
 - 🌓 Light / dark theme toggle (persists)
-- ⬇ Export the entire project to JSON · ⬆ Import to restore
+- ⬇ Export entire project to JSON · ⬆ Import to restore
 - 🗑 Reset with confirmation modal
 - Per-section copy buttons
 - Auto-save on every keystroke
@@ -56,18 +95,11 @@ When the writer finishes stage 9, the **Final Bundle** stitches the article, met
 
 ## Running it
 
-Just open `index.html` in any modern browser. No server, no install.
-
-For a tidy workflow:
-
-1. Open the file once — it creates a localStorage slot.
-2. Fill the intake, work the writer.
-4. Hand off to checker, walk the review.
-5. Use the per-section Copy buttons or the **Copy full review** / **Download .md** actions to ship.
+Open `index.html` in any modern browser. No server, no install.
 
 ## Tech notes
 
-- Single file, ~90 KB, no external requests.
+- Single file, ~72 KB, no external requests.
 - Vanilla JS, no framework, no build step.
 - Theme is `data-theme` on `<html>`; everything else is CSS variables.
 - State shape is in the `state` object near the top of the `<script>` block — easy to inspect or extend.
