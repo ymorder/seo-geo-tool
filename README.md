@@ -32,15 +32,20 @@ The mega prompt injects strict language-specific rules when you pick a language:
 
 The prompt also explicitly tells the AI to write the meta title and description in the same language as the body (with URL slug staying English/transliterated for SEO).
 
-## Generate with AI (BYOK)
+## Generate with AI
 
-You can run the AI step directly in the tool without copy-pasting anywhere. Click **⚙ Settings** in the Generate panel, paste your API key, pick a provider and model:
+You can run the AI step directly in the tool without copy-pasting anywhere. Click **✨ Generate with AI** in the Generate panel — the tool calls the configured provider, parses the response, and fills every field.
 
-- **OpenAI**: `gpt-4o-mini` (cheap, fast), `gpt-4o`, `gpt-4-turbo`, `o1-mini`
-- **Anthropic**: `claude-3-5-sonnet-latest`, `claude-3-5-haiku-latest`
-- **Google Gemini**: `gemini-1.5-flash`, `gemini-1.5-pro`, `gemini-2.0-flash-exp`
+**Default provider: 🌱 Pollinations.ai** — free public API, no key required, works out of the box. Models: `openai-fast`, `openai-large`, `mistral`, `llama`, `qwen-coder`.
 
-The key is stored only in your browser's localStorage and sent directly to the provider — never through any intermediate server. Click **✨ Generate with AI** and the tool calls the API, parses the response, and fills every field.
+**Free / local alternatives** (via ⚙ Settings):
+
+- **🦙 Ollama (local)** — runs on your hardware, no API key. Default URL `http://localhost:11434/v1`. Models: `llama3.2`, `mistral`, `qwen2.5`, `phi3`, `gemma2`. Requires [Ollama](https://ollama.com) installed and a model pulled.
+- **OpenAI** (BYOK): `gpt-4o-mini` (cheap, fast), `gpt-4o`, `gpt-4-turbo`, `o1-mini`
+- **Anthropic** (BYOK): `claude-3-5-sonnet-latest`, `claude-3-5-haiku-latest`
+- **Google Gemini** (BYOK): `gemini-1.5-flash`, `gemini-1.5-pro`, `gemini-2.0-flash-exp`
+
+API keys are stored only in your browser's localStorage and sent directly to the provider — never through any intermediate server.
 
 If you don't want to use BYOK, the **Copy full prompt** workflow still works exactly as before.
 

@@ -487,7 +487,7 @@
                 <div class="step-num">1</div>
                 <div class="step-body">
                   <div class="step-title">Get the prompt</div>
-                  <div class="step-desc">Copy the comprehensive prompt below, OR click <strong>Generate with AI</strong> to run it directly here (set API key in Settings first).</div>
+                  <div class="step-desc">Copy the comprehensive prompt below, OR click <strong>Generate with AI</strong> to run it directly here. <strong style="color:var(--success);">Free out of the box</strong> via Pollinations.ai. Set an API key in ⚙ Settings for other providers.</div>
                   <div class="step-actions">
                     <button class="btn writer" id="btn-copy-prompt">📋 Copy full prompt</button>
                     <button class="btn primary" id="btn-generate-ai">✨ Generate with AI</button>
@@ -914,28 +914,36 @@
     <p style="margin-bottom:14px;">Set up an API key to use <strong>Generate with AI</strong> directly in the tool. Your key is stored only in this browser's localStorage and is sent directly to the provider — never through any intermediate server.</p>
 
     <div class="settings-help">
-      <strong>Supported providers:</strong><br>
-      • <strong>OpenAI:</strong> <code>gpt-4o-mini</code>, <code>gpt-4o</code>, <code>gpt-4-turbo</code>, <code>o1-mini</code><br>
-      • <strong>Anthropic:</strong> <code>claude-3-5-sonnet-latest</code>, <code>claude-3-5-haiku-latest</code><br>
-      • <strong>Google Gemini:</strong> <code>gemini-1.5-flash</code>, <code>gemini-1.5-pro</code>, <code>gemini-2.0-flash-exp</code>
+      <strong>Providers:</strong><br>
+      • <strong>🌱 Pollinations.ai</strong> — <em>free, no key, works out of the box.</em> Models: <code>openai-fast</code>, <code>openai-large</code>, <code>mistral</code>, <code>llama</code>, <code>qwen-coder</code>.<br>
+      • <strong>🦙 Ollama (local)</strong> — <em>free, runs on your hardware.</em> Default <code>http://localhost:11434</code>. Models: <code>llama3.2</code>, <code>mistral</code>, <code>qwen2.5</code>, <code>phi3</code>, <code>gemma2</code>.<br>
+      • <strong>OpenAI</strong> · <code>gpt-4o-mini</code>, <code>gpt-4o</code>, <code>gpt-4-turbo</code>, <code>o1-mini</code><br>
+      • <strong>Anthropic</strong> · <code>claude-3-5-sonnet-latest</code>, <code>claude-3-5-haiku-latest</code><br>
+      • <strong>Google Gemini</strong> · <code>gemini-1.5-flash</code>, <code>gemini-1.5-pro</code>, <code>gemini-2.0-flash-exp</code>
     </div>
 
     <div class="form-grid cols-1" style="gap:12px;">
       <div class="field">
         <label class="label">Provider</label>
         <select class="select" id="set-provider">
-          <option value="openai">OpenAI (api.openai.com)</option>
-          <option value="anthropic">Anthropic (api.anthropic.com)</option>
-          <option value="gemini">Google Gemini (generativelanguage.googleapis.com)</option>
+          <option value="pollinations">🌱 Pollinations.ai (free, no key)</option>
+          <option value="ollama">🦙 Ollama (local, free)</option>
+          <option value="openai">OpenAI (BYOK)</option>
+          <option value="anthropic">Anthropic (BYOK)</option>
+          <option value="gemini">Google Gemini (BYOK)</option>
         </select>
       </div>
       <div class="field">
         <label class="label">Model</label>
-        <input class="input mono" id="set-model" placeholder="gpt-4o-mini" />
+        <input class="input mono" id="set-model" placeholder="openai-fast" />
       </div>
-      <div class="field">
+      <div class="field" id="set-baseurl-field" style="display:none;">
+        <label class="label">Ollama base URL <span class="hint">(include /v1 if your server expects it)</span></label>
+        <input class="input mono" id="set-baseurl" placeholder="http://localhost:11434/v1" />
+      </div>
+      <div class="field" id="set-apikey-field">
         <label class="label">API Key</label>
-        <input class="input mono" id="set-apikey" type="password" placeholder="sk-... · sk-ant-... · AIza..." />
+        <input class="input mono" id="set-apikey" type="password" placeholder="(not needed for Pollinations / Ollama)" />
       </div>
     </div>
 
@@ -983,7 +991,7 @@ const state = {
     currentStage: 'cinput'
   },
   theme: 'light',
-  settings: { provider: 'openai', apiKey: '', model: 'gpt-4o-mini' }
+  settings: { provider: 'pollinations', apiKey: '', model: 'openai-fast', baseUrl: '' }
 };
 
 /* ============================================================
@@ -1254,22 +1262,44 @@ function setStatus(id, text, cls) {
 function defaultModelFor(provider) {
   if (provider === 'anthropic') return 'claude-3-5-sonnet-latest';
   if (provider === 'gemini') return 'gemini-1.5-flash';
+  if (provider === 'ollama') return 'llama3.2';
+  if (provider === 'pollinations') return 'openai-fast';
   return 'gpt-4o-mini';
+}
+function noKeyRequired(provider) {
+  return provider === 'pollinations' || provider === 'ollama';
+}
+function needsBaseUrl(provider) {
+  return provider === 'ollama';
+}
+function syncSettingsUI() {
+  const p = $('set-provider').value;
+  $('set-apikey-field').style.display = noKeyRequired(p) ? 'none' : '';
+  $('set-baseurl-field').style.display = needsBaseUrl(p) ? '' : 'none';
 }
 function openSettings() {
   $('set-provider').value = state.settings.provider;
-  $('set-model').value = state.settings.model || '';
+  $('set-model').value = state.settings.model || defaultModelFor(state.settings.provider);
   $('set-apikey').value = state.settings.apiKey || '';
+  $('set-baseurl').value = state.settings.baseUrl || 'http://localhost:11434/v1';
+  syncSettingsUI();
   updateKeyStatus();
   $('settings-modal').classList.add('open');
 }
 function closeSettings() { $('settings-modal').classList.remove('open'); }
 function updateKeyStatus() {
-  const has = !!state.settings.apiKey;
-  $('api-key-status').textContent = has
-    ? `✓ Key saved · ${state.settings.provider} · ${state.settings.model}`
-    : 'No key saved yet.';
-  $('api-key-status').className = 'api-key-status ' + (has ? 'ok' : 'missing');
+  const p = state.settings.provider;
+  const m = state.settings.model;
+  if (noKeyRequired(p)) {
+    $('api-key-status').textContent = `✓ ${p} ready · ${m} · no key needed`;
+    $('api-key-status').className = 'api-key-status ok';
+  } else if (state.settings.apiKey) {
+    $('api-key-status').textContent = `✓ Key saved · ${p} · ${m}`;
+    $('api-key-status').className = 'api-key-status ok';
+  } else {
+    $('api-key-status').textContent = `No key saved yet — required for ${p}.`;
+    $('api-key-status').className = 'api-key-status missing';
+  }
 }
 function bindSettings() {
   $('btn-settings-cancel').addEventListener('click', closeSettings);
@@ -1277,10 +1307,11 @@ function bindSettings() {
     state.settings.provider = $('set-provider').value;
     state.settings.model = $('set-model').value.trim() || defaultModelFor($('set-provider').value);
     state.settings.apiKey = $('set-apikey').value.trim();
+    state.settings.baseUrl = $('set-baseurl').value.trim();
     save();
     updateKeyStatus();
     closeSettings();
-    toast(state.settings.apiKey ? 'Settings saved' : 'Settings saved (no key — use copy prompt)');
+    toast('Settings saved');
   });
   $('btn-clear-key').addEventListener('click', () => {
     state.settings.apiKey = '';
@@ -1290,10 +1321,10 @@ function bindSettings() {
     toast('API key cleared');
   });
   $('set-provider').addEventListener('change', () => {
-    // Suggest a sensible default model when provider changes
+    syncSettingsUI();
     const def = defaultModelFor($('set-provider').value);
     const cur = $('set-model').value || '';
-    if (!cur || cur.startsWith('gpt-') || cur.startsWith('claude-') || cur.startsWith('gemini-')) {
+    if (!cur || cur.startsWith('gpt-') || cur.startsWith('claude-') || cur.startsWith('gemini-') || cur.startsWith('llama') || cur.startsWith('mistral') || cur.startsWith('openai-fast') || cur.startsWith('openai-large')) {
       $('set-model').value = def;
     }
   });
@@ -1306,7 +1337,7 @@ function bindSettings() {
    GENERATE WITH AI (BYOK)
    ============================================================ */
 async function generateWithAI() {
-  if (!state.settings.apiKey) {
+  if (!noKeyRequired(state.settings.provider) && !state.settings.apiKey) {
     setStatus('ai-status', 'No API key — opening settings', 'err');
     openSettings();
     return;
@@ -1341,7 +1372,50 @@ async function generateWithAI() {
 }
 
 async function callAI(prompt) {
-  const { provider, apiKey, model } = state.settings;
+  const { provider, apiKey, model, baseUrl } = state.settings;
+  if (provider === 'pollinations') {
+    // Pollinations.ai — free public API, no key needed
+    const res = await fetch('https://text.pollinations.ai/openai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: model || 'openai-fast',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        seed: Math.floor(Math.random() * 1e9)
+      })
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Pollinations ${res.status}: ${errText.slice(0, 200)}`);
+    }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || (await res.text());
+  }
+  if (provider === 'ollama') {
+    // Ollama local server — OpenAI-compatible API
+    const base = (baseUrl || 'http://localhost:11434/v1').replace(/\/+$/, '');
+    const url = base.endsWith('/v1') ? base + '/chat/completions' : base + '/v1/chat/completions';
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ollama'
+      },
+      body: JSON.stringify({
+        model: model || 'llama3.2',
+        messages: [{ role: 'user', content: prompt }],
+        stream: false,
+        temperature: 0.7
+      })
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Ollama ${res.status}: ${errText.slice(0, 200)}`);
+    }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || '';
+  }
   if (provider === 'anthropic') {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
